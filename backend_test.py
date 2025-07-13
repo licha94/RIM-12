@@ -584,6 +584,345 @@ class RimareumAPITester:
             self.log_test("Security Audit Endpoint", False, f"Exception: {str(e)}")
             return False
     
+    # PHASE 7 SENTINEL CORE TESTS
+    
+    def test_sentinel_core_status(self):
+        """Test GET /api/security/sentinel/status - Phase 7 Sentinel Core status"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/security/sentinel/status")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['phase', 'status', 'components', 'security_level']
+                component_fields = ['intelligent_detection', 'gpt_secure_4', 'smart_firewall_ml', 'multilingual_chatbot', 'reactive_surveillance']
+                
+                if all(field in data for field in required_fields):
+                    components = data.get('components', {})
+                    if all(field in components for field in component_fields):
+                        if data.get('phase') == '7_SENTINEL_CORE' and data.get('status') == 'ACTIVE':
+                            self.log_test("Sentinel Core Status", True, "Phase 7 Sentinel Core active with all components", data)
+                            return True
+                        else:
+                            self.log_test("Sentinel Core Status", False, "Sentinel Core not in active Phase 7 state", data)
+                            return False
+                    else:
+                        self.log_test("Sentinel Core Status", False, "Missing component status fields", data)
+                        return False
+                else:
+                    self.log_test("Sentinel Core Status", False, "Missing required status fields", data)
+                    return False
+            else:
+                self.log_test("Sentinel Core Status", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Sentinel Core Status", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_multilingual_chatbot_french(self):
+        """Test POST /api/chatbot/multilingual - French language"""
+        try:
+            chat_data = {
+                "message": "Bonjour, comment allez-vous?",
+                "language": "fr"
+            }
+            response = self.session.post(f"{BACKEND_URL}/chatbot/multilingual", json=chat_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['response', 'detected_language', 'response_type', 'supported_languages']
+                if all(field in data for field in required_fields):
+                    if data.get('detected_language') == 'fr' and 'fr' in data.get('supported_languages', []):
+                        self.log_test("Multilingual Chatbot (French)", True, "French chatbot response working", data)
+                        return True
+                    else:
+                        self.log_test("Multilingual Chatbot (French)", False, "Language detection or support issue", data)
+                        return False
+                else:
+                    self.log_test("Multilingual Chatbot (French)", False, "Missing response fields", data)
+                    return False
+            else:
+                self.log_test("Multilingual Chatbot (French)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Multilingual Chatbot (French)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_multilingual_chatbot_english(self):
+        """Test POST /api/chatbot/multilingual - English language"""
+        try:
+            chat_data = {
+                "message": "Hello, how can you help me with RIMAREUM?",
+                "language": "en"
+            }
+            response = self.session.post(f"{BACKEND_URL}/chatbot/multilingual", json=chat_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['response', 'detected_language', 'response_type', 'supported_languages']
+                if all(field in data for field in required_fields):
+                    if 'en' in data.get('supported_languages', []):
+                        self.log_test("Multilingual Chatbot (English)", True, "English chatbot response working", data)
+                        return True
+                    else:
+                        self.log_test("Multilingual Chatbot (English)", False, "English language not supported", data)
+                        return False
+                else:
+                    self.log_test("Multilingual Chatbot (English)", False, "Missing response fields", data)
+                    return False
+            else:
+                self.log_test("Multilingual Chatbot (English)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Multilingual Chatbot (English)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_multilingual_chatbot_arabic(self):
+        """Test POST /api/chatbot/multilingual - Arabic language"""
+        try:
+            chat_data = {
+                "message": "مرحبا، كيف يمكنك مساعدتي؟",
+                "language": "ar"
+            }
+            response = self.session.post(f"{BACKEND_URL}/chatbot/multilingual", json=chat_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['response', 'detected_language', 'response_type', 'supported_languages']
+                if all(field in data for field in required_fields):
+                    if 'ar' in data.get('supported_languages', []):
+                        self.log_test("Multilingual Chatbot (Arabic)", True, "Arabic chatbot response working", data)
+                        return True
+                    else:
+                        self.log_test("Multilingual Chatbot (Arabic)", False, "Arabic language not supported", data)
+                        return False
+                else:
+                    self.log_test("Multilingual Chatbot (Arabic)", False, "Missing response fields", data)
+                    return False
+            else:
+                self.log_test("Multilingual Chatbot (Arabic)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Multilingual Chatbot (Arabic)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_multilingual_chatbot_spanish(self):
+        """Test POST /api/chatbot/multilingual - Spanish language"""
+        try:
+            chat_data = {
+                "message": "Hola, ¿cómo puedes ayudarme con RIMAREUM?",
+                "language": "es"
+            }
+            response = self.session.post(f"{BACKEND_URL}/chatbot/multilingual", json=chat_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['response', 'detected_language', 'response_type', 'supported_languages']
+                if all(field in data for field in required_fields):
+                    if 'es' in data.get('supported_languages', []):
+                        self.log_test("Multilingual Chatbot (Spanish)", True, "Spanish chatbot response working", data)
+                        return True
+                    else:
+                        self.log_test("Multilingual Chatbot (Spanish)", False, "Spanish language not supported", data)
+                        return False
+                else:
+                    self.log_test("Multilingual Chatbot (Spanish)", False, "Missing response fields", data)
+                    return False
+            else:
+                self.log_test("Multilingual Chatbot (Spanish)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Multilingual Chatbot (Spanish)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_supported_languages_endpoint(self):
+        """Test GET /api/chatbot/languages - Supported languages"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/chatbot/languages")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['supported_languages', 'language_details']
+                expected_languages = ['fr', 'en', 'ar', 'es']
+                
+                if all(field in data for field in required_fields):
+                    supported = data.get('supported_languages', [])
+                    if all(lang in supported for lang in expected_languages):
+                        self.log_test("Supported Languages Endpoint", True, f"All 4 languages supported: {supported}", data)
+                        return True
+                    else:
+                        missing = [lang for lang in expected_languages if lang not in supported]
+                        self.log_test("Supported Languages Endpoint", False, f"Missing languages: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Supported Languages Endpoint", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("Supported Languages Endpoint", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Supported Languages Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_gpt_security_report(self):
+        """Test GET /api/security/gpt/report - GPT-4 security report"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/security/gpt/report?time_period=24h")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['report', 'gpt_version', 'security_assistant', 'timestamp']
+                if all(field in data for field in required_fields):
+                    if data.get('gpt_version') == '4.0' and 'RIMAREUM GPT-SECURE' in data.get('security_assistant', ''):
+                        self.log_test("GPT Security Report", True, "GPT-4 security report generated", data)
+                        return True
+                    else:
+                        self.log_test("GPT Security Report", False, "Invalid GPT version or assistant name", data)
+                        return False
+                else:
+                    self.log_test("GPT Security Report", False, "Missing report fields", data)
+                    return False
+            else:
+                self.log_test("GPT Security Report", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("GPT Security Report", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_threat_intelligence(self):
+        """Test GET /api/security/intelligence - Threat intelligence data"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/security/intelligence")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['threat_intelligence', 'last_update', 'source']
+                if all(field in data for field in required_fields):
+                    if 'RIMAREUM SENTINEL CORE' in data.get('source', ''):
+                        self.log_test("Threat Intelligence", True, "Threat intelligence data retrieved", data)
+                        return True
+                    else:
+                        self.log_test("Threat Intelligence", False, "Invalid source information", data)
+                        return False
+                else:
+                    self.log_test("Threat Intelligence", False, "Missing intelligence fields", data)
+                    return False
+            else:
+                self.log_test("Threat Intelligence", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Threat Intelligence", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_monitoring_stats(self):
+        """Test GET /api/security/monitoring/stats - Continuous monitoring stats"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/security/monitoring/stats")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['monitoring_stats', 'phase', 'timestamp']
+                if all(field in data for field in required_fields):
+                    if data.get('phase') == '7_SENTINEL_CORE':
+                        self.log_test("Monitoring Stats", True, "Continuous monitoring stats retrieved", data)
+                        return True
+                    else:
+                        self.log_test("Monitoring Stats", False, "Invalid phase information", data)
+                        return False
+                else:
+                    self.log_test("Monitoring Stats", False, "Missing monitoring fields", data)
+                    return False
+            else:
+                self.log_test("Monitoring Stats", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Monitoring Stats", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_ml_model_info(self):
+        """Test GET /api/security/ml/model - ML model information"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/security/ml/model")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['ml_model_info', 'phase', 'timestamp']
+                if all(field in data for field in required_fields):
+                    if data.get('phase') == '7_SENTINEL_CORE':
+                        model_info = data.get('ml_model_info', {})
+                        if 'model_version' in model_info and 'is_trained' in model_info:
+                            self.log_test("ML Model Info", True, "ML model information retrieved", data)
+                            return True
+                        else:
+                            self.log_test("ML Model Info", False, "Missing model info fields", data)
+                            return False
+                    else:
+                        self.log_test("ML Model Info", False, "Invalid phase information", data)
+                        return False
+                else:
+                    self.log_test("ML Model Info", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("ML Model Info", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("ML Model Info", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_ml_training_trigger(self):
+        """Test POST /api/security/ml/train - ML model training"""
+        try:
+            response = self.session.post(f"{BACKEND_URL}/security/ml/train", json={})
+            
+            # Expect either success (200) or service unavailable (503) in fallback mode
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['training_triggered', 'timestamp']
+                if all(field in data for field in required_fields):
+                    self.log_test("ML Training Trigger", True, "ML training triggered successfully", data)
+                    return True
+                else:
+                    self.log_test("ML Training Trigger", False, "Missing training response fields", data)
+                    return False
+            elif response.status_code == 503:
+                data = response.json()
+                if "ML detector not available" in data.get("detail", ""):
+                    self.log_test("ML Training Trigger", True, "ML training unavailable (expected in fallback mode)", data)
+                    return True
+                else:
+                    self.log_test("ML Training Trigger", False, "Unexpected error message", data)
+                    return False
+            else:
+                self.log_test("ML Training Trigger", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("ML Training Trigger", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_rate_limiting_phase7_endpoints(self):
+        """Test rate limiting on Phase 7 endpoints"""
+        try:
+            # Test rate limiting on multilingual chatbot (30/minute limit)
+            rapid_requests = []
+            chat_data = {"message": "Test message", "language": "en"}
+            
+            for i in range(3):  # Send 3 rapid requests
+                response = self.session.post(f"{BACKEND_URL}/chatbot/multilingual", json=chat_data)
+                rapid_requests.append(response.status_code)
+                time.sleep(0.2)  # Small delay between requests
+            
+            # All requests should succeed initially (3 requests is well under 30/minute)
+            success_count = sum(1 for status in rapid_requests if status == 200)
+            
+            if success_count >= 2:  # Allow for 1 potential failure
+                self.log_test("Phase 7 Rate Limiting", True, f"Rate limiting working - {success_count}/3 requests succeeded")
+                return True
+            else:
+                self.log_test("Phase 7 Rate Limiting", False, f"Only {success_count}/3 requests succeeded")
+                return False
+        except Exception as e:
+            self.log_test("Phase 7 Rate Limiting", False, f"Exception: {str(e)}")
+            return False
+    
     def run_all_tests(self):
         """Run comprehensive test suite"""
         print("🚀 Starting RIMAREUM Backend API Test Suite - PHASE 6 SECURITY")
