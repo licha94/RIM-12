@@ -683,8 +683,38 @@ class GPTSecurityAssistant:
                 "Mettre à jour les signatures",
                 "Améliorer la détection comportementale",
                 "Renforcer la surveillance"
+                "Mettre à jour les signatures",
+                "Améliorer la détection comportementale",
+                "Renforcer la surveillance"
             ]
         }
+
+class PasswordHasher:
+    """Gestionnaire de hashage des mots de passe SHA256 + bcrypt"""
+    
+    @staticmethod
+    def hash_password(password: str) -> str:
+        """Hasher un mot de passe avec SHA256 + bcrypt"""
+        # Première étape: SHA256
+        sha256_hash = hashlib.sha256(password.encode()).hexdigest()
+        
+        # Deuxième étape: bcrypt avec salt
+        salt = bcrypt.gensalt(rounds=SECURITY_CONFIG["password_hash_rounds"])
+        bcrypt_hash = bcrypt.hashpw(sha256_hash.encode(), salt)
+        
+        return bcrypt_hash.decode()
+    
+    @staticmethod
+    def verify_password(password: str, hashed_password: str) -> bool:
+        """Vérifier un mot de passe"""
+        try:
+            # Recalculer SHA256
+            sha256_hash = hashlib.sha256(password.encode()).hexdigest()
+            
+            # Vérifier avec bcrypt
+            return bcrypt.checkpw(sha256_hash.encode(), hashed_password.encode())
+        except Exception:
+            return False
     """Gestionnaire de hashage des mots de passe SHA256 + bcrypt"""
     
     @staticmethod
