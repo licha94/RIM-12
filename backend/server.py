@@ -34,8 +34,34 @@ except ImportError:
     async def get_security_check(request: Request):
         return {"allowed": True, "risk_score": 0.0}
     
+    # Mock objects for fallback
+    class MockWAF:
+        def __init__(self):
+            self.blocked_ips = set()
+    
+    class MockPasswordHasher:
+        @staticmethod
+        def hash_password(password: str) -> str:
+            return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        @staticmethod
+        def verify_password(password: str, hashed: str) -> bool:
+            return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    
+    class MockAPIKeyManager:
+        def generate_api_key(self, user_id: str) -> str:
+            return base64.b64encode(f"{user_id}:{datetime.utcnow().timestamp()}".encode()).decode()
+    
+    class MockAuditScheduler:
+        async def run_scheduled_audit(self):
+            pass
+    
     limiter = None
     oauth2_scheme = None
+    waf_instance = MockWAF()
+    PasswordHasher = MockPasswordHasher()
+    api_key_manager = MockAPIKeyManager()
+    audit_scheduler = MockAuditScheduler()
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
