@@ -40,13 +40,34 @@ except ImportError:
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Configuration sécurité
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY must be set in environment variables")
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Create the main app without a prefix
-app = FastAPI(title="RIMAREUM API", description="Revolutionary E-commerce & Crypto Platform")
+app = FastAPI(
+    title="RIMAREUM API - PHASE 6 SECURED", 
+    description="Revolutionary E-commerce & Crypto Platform with Advanced Security",
+    version="6.0.0"
+)
+
+# PHASE 6 Security Middlewares
+app.add_middleware(HTTPSRedirectMiddleware)
+app.add_middleware(
+    TrustedHostMiddleware, 
+    allowed_hosts=["*"]  # Configure with your domain in production
+)
+
+# Rate limiting
+if limiter:
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
