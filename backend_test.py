@@ -324,18 +324,20 @@ class RimareumAPITester:
             
             if response.status_code == 200:
                 data = response.json()
-                required_fields = ['total_products', 'total_users', 'total_orders', 'total_payments', 'revenue']
-                if all(field in data for field in required_fields):
-                    self.log_test("Admin Stats", True, "Platform statistics retrieved", data)
+                required_fields = ['total_products', 'total_users', 'total_orders', 'total_payments', 'total_revenue']
+                security_fields = ['blocked_ips', 'security_events']
+                if all(field in data for field in required_fields) and all(field in data for field in security_fields):
+                    self.log_test("Admin Stats with Security", True, "Platform statistics with security data retrieved", data)
                     return True
                 else:
-                    self.log_test("Admin Stats", False, "Missing required stats fields", data)
+                    missing_fields = [f for f in required_fields + security_fields if f not in data]
+                    self.log_test("Admin Stats with Security", False, f"Missing fields: {missing_fields}", data)
                     return False
             else:
-                self.log_test("Admin Stats", False, f"Status: {response.status_code}")
+                self.log_test("Admin Stats with Security", False, f"Status: {response.status_code}")
                 return False
         except Exception as e:
-            self.log_test("Admin Stats", False, f"Exception: {str(e)}")
+            self.log_test("Admin Stats with Security", False, f"Exception: {str(e)}")
             return False
     
     def test_invalid_endpoints(self):
