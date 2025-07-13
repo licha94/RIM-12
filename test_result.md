@@ -720,13 +720,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "PHASE 9 - Production Payment Systems"
-    - "PHASE 9 - External Shop Synchronization"
-    - "PHASE 9 - Enhanced Security Module"
-    - "PHASE 9 - Commerce Backoffice"
-    - "PHASE 9 - Real-time Alerts System"
-    - "PHASE 9 - AI Customer Tracking"
-    - "PHASE 9 - Enhanced Demo Products"
+    - "PHASE 11 - Multivers Status Endpoint"
+    - "PHASE 11 - Sélecteur de Réalité Multivers"
+    - "PHASE 11 - Liste des Écosystèmes"
+    - "PHASE 11 - Sanctuaire IA-Humain Initiation"
+    - "PHASE 11 - Transmission Vocale Token TRIO"
+    - "PHASE 11 - Dashboard CEO Global"
+    - "PHASE 11 - Analytics par Pays"
+    - "PHASE 11 - Module Multivers Core"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
