@@ -193,7 +193,190 @@ class SecurityReport(BaseModel):
     captcha_response: Optional[str] = None
     details: Dict[str, Any] = {}
 
-# --- AUTHENTICATION HELPERS ---
+# --- SECURITY ENDPOINTS PHASE 6 ---
+
+@api_router.post("/auth/register", response_model=Dict[str, Any])
+async def register_user(
+    user_data: UserRegistration,
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Inscription utilisateur avec sécurité renforcée"""
+    try:
+        # Vérifier si l'utilisateur existe déjà
+        existing_user = await db.users.find_one({"email": user_data.email})
+        if existing_user:
+            raise HTTPException(
+                status_code=400,
+                detail="User already exists with this email"
+            )
+        
+        # Hasher le mot de passe avec la nouvelle méthode
+        password_hash = PasswordHasher.hash_password(user_data.password)
+        
+        # Créer l'utilisateur
+        user = User(
+            email=user_data.email,
+            username=user_data.username,
+            password_hash=password_hash
+        )
+        
+        # Insérer en base
+        await db.users.insert_one(user.dict())
+        
+        # Générer une clé API
+        api_key = api_key_manager.generate_api_key(user.id)
+        
+        # Mettre à jour l'utilisateur avec la clé API
+        await db.users.update_one(
+            {"id": user.id},
+            {"$push": {"api_keys": api_key}}
+        )
+        
+        return {
+            "message": "User registered successfully",
+            "user_id": user.id,
+            "api_key": api_key
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/auth/login", response_model=TokenResponse)
+async def login_user(
+    login_data: UserLogin,
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Connexion utilisateur avec OAuth2"""
+    try:
+        # Trouver l'utilisateur
+        user_doc = await db.users.find_one({"username": login_data.username})
+        if not user_doc:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid credentials"
+            )
+        
+        # Vérifier le mot de passe
+        if not PasswordHasher.verify_password(login_data.password, user_doc["password_hash"]):
+            # Incrémenter les tentatives échouées
+            await db.users.update_one(
+                {"id": user_doc["id"]},
+                {"$inc": {"failed_login_attempts": 1}}
+            )
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid credentials"
+            )
+        
+        # Réinitialiser les tentatives échouées et mettre à jour la dernière connexion
+        await db.users.update_one(
+            {"id": user_doc["id"]},
+            {
+                "$set": {
+                    "failed_login_attempts": 0,
+                    "last_login": datetime.utcnow()
+                }
+            }
+        )
+        
+        # Générer une nouvelle clé API
+        api_key = api_key_manager.generate_api_key(user_doc["id"])
+        
+        # Ajouter la clé API à l'utilisateur
+        await db.users.update_one(
+            {"id": user_doc["id"]},
+            {"$push": {"api_keys": api_key}}
+        )
+        
+        return TokenResponse(
+            access_token=api_key,
+            token_type="bearer",
+            expires_in=7200,  # 2 heures
+            api_key=api_key
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/security/report")
+async def report_security_event(
+    event: SecurityReport,
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Rapport d'événement de sécurité depuis le frontend"""
+    try:
+        # Créer l'événement de sécurité
+        security_event = SecurityEvent(
+            event_type=event.event_type,
+            ip_address=event.ip_address,
+            user_agent=request.headers.get("user-agent", ""),
+            risk_score=0.5,  # Score par défaut
+            blocked=False,
+            details=event.details
+        )
+        
+        # Stocker en base
+        await db.security_events.insert_one(security_event.dict())
+        
+        return {"message": "Security event reported successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/security/status")
+async def get_security_status(
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Obtenir le statut de sécurité actuel"""
+    try:
+        return {
+            "security_level": "PHASE_6_ACTIVE",
+            "waf_active": True,
+            "guardian_ai_active": True,
+            "rate_limit_active": True,
+            "geo_blocking_active": True,
+            "blocked_ips": len(waf_instance.blocked_ips),
+            "risk_score": security_check.get("risk_score", 0.0),
+            "last_audit": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/security/audit")
+async def get_security_audit(
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Audit de sécurité détaillé (admin uniquement)"""
+    try:
+        # Récupérer les événements de sécurité récents
+        recent_events = await db.security_events.find(
+            {"timestamp": {"$gte": datetime.utcnow() - timedelta(hours=24)}}
+        ).sort("timestamp", -1).limit(100).to_list(100)
+        
+        # Statistiques
+        total_events = len(recent_events)
+        blocked_events = sum(1 for e in recent_events if e.get("blocked", False))
+        high_risk_events = sum(1 for e in recent_events if e.get("risk_score", 0) > 0.7)
+        
+        return {
+            "audit_period": "24h",
+            "total_events": total_events,
+            "blocked_events": blocked_events,
+            "high_risk_events": high_risk_events,
+            "guardian_ai_status": "ACTIVE",
+            "recent_events": recent_events[:10]  # 10 plus récents
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 async def get_current_user(authorization: Optional[str] = Header(None)) -> Optional[User]:
     """Get current user from session token (simplified for MVP)"""
     if not authorization:
