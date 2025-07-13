@@ -80,6 +80,188 @@ class SecurityEvent:
     blocked: bool
     details: Dict
 
+class PasswordHasher:
+    """Gestionnaire de hashage des mots de passe SHA256 + bcrypt"""
+    
+    @staticmethod
+    def hash_password(password: str) -> str:
+        """Hasher un mot de passe avec SHA256 + bcrypt"""
+        # Première étape: SHA256
+        sha256_hash = hashlib.sha256(password.encode()).hexdigest()
+        
+        # Deuxième étape: bcrypt avec salt
+        salt = bcrypt.gensalt(rounds=SECURITY_CONFIG["password_hash_rounds"])
+        bcrypt_hash = bcrypt.hashpw(sha256_hash.encode(), salt)
+        
+        return bcrypt_hash.decode()
+    
+    @staticmethod
+    def verify_password(password: str, hashed_password: str) -> bool:
+        """Vérifier un mot de passe"""
+        try:
+            # Recalculer SHA256
+            sha256_hash = hashlib.sha256(password.encode()).hexdigest()
+            
+            # Vérifier avec bcrypt
+            return bcrypt.checkpw(sha256_hash.encode(), hashed_password.encode())
+        except Exception:
+            return False
+
+class CountryBlocker:
+    """Système de blocage géographique"""
+    
+    def __init__(self):
+        self.ip_cache = {}
+        self.cache_expiry = 3600  # 1 heure
+    
+    async def get_country_code(self, ip: str) -> Optional[str]:
+        """Obtenir le code pays d'une IP via ipapi.co"""
+        if ip in self.ip_cache:
+            cached_data = self.ip_cache[ip]
+            if time.time() - cached_data["timestamp"] < self.cache_expiry:
+                return cached_data["country"]
+        
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(f"https://ipapi.co/{ip}/country/")
+                if response.status_code == 200:
+                    country_code = response.text.strip()
+                    
+                    # Mettre en cache
+                    self.ip_cache[ip] = {
+                        "country": country_code,
+                        "timestamp": time.time()
+                    }
+                    
+                    return country_code
+        except Exception as e:
+            logging.error(f"Erreur géolocalisation IP {ip}: {e}")
+        
+        return None
+    
+    async def is_country_allowed(self, ip: str) -> bool:
+        """Vérifier si le pays est autorisé"""
+        if not SECURITY_CONFIG["allowed_countries"]:
+            return True
+        
+        country_code = await self.get_country_code(ip)
+        if not country_code:
+            return True  # Autoriser si impossible de déterminer
+        
+        return country_code.upper() in SECURITY_CONFIG["allowed_countries"]
+
+class RimareumGuardianAI:
+    """Intelligence artificielle de surveillance RIMAREUM"""
+    
+    def __init__(self):
+        self.request_patterns = defaultdict(list)
+        self.behavioral_model = {
+            "normal_patterns": set(),
+            "suspicious_patterns": set(),
+            "learning_mode": True
+        }
+        self.threat_scores = defaultdict(float)
+    
+    async def analyze_request(self, request: Request, client_ip: str) -> Dict:
+        """Analyser une requête avec l'IA Guardian"""
+        
+        # Extraire les caractéristiques de la requête
+        features = self._extract_features(request, client_ip)
+        
+        # Analyser les patterns
+        pattern_score = await self._analyze_patterns(features)
+        
+        # Analyser le comportement
+        behavior_score = await self._analyze_behavior(client_ip, features)
+        
+        # Score final
+        ai_risk_score = max(pattern_score, behavior_score)
+        
+        # Apprentissage automatique
+        if self.behavioral_model["learning_mode"]:
+            await self._learn_from_request(features, ai_risk_score)
+        
+        return {
+            "ai_risk_score": ai_risk_score,
+            "pattern_score": pattern_score,
+            "behavior_score": behavior_score,
+            "features": features
+        }
+    
+    def _extract_features(self, request: Request, client_ip: str) -> Dict:
+        """Extraire les caractéristiques d'une requête"""
+        return {
+            "path": request.url.path,
+            "method": request.method,
+            "user_agent": request.headers.get("user-agent", ""),
+            "content_length": request.headers.get("content-length", 0),
+            "referer": request.headers.get("referer", ""),
+            "accept": request.headers.get("accept", ""),
+            "ip": client_ip,
+            "timestamp": time.time()
+        }
+    
+    async def _analyze_patterns(self, features: Dict) -> float:
+        """Analyser les patterns de requête"""
+        risk_score = 0.0
+        
+        # Vérifier les patterns suspects connus
+        request_content = " ".join([
+            features["path"],
+            features["user_agent"],
+            features["referer"]
+        ])
+        
+        for pattern in SECURITY_CONFIG["suspicious_patterns"]:
+            if re.search(pattern, request_content, re.IGNORECASE):
+                risk_score += 0.3
+        
+        # Vérifier les honeypots
+        for honeypot in SECURITY_CONFIG["honeypot_endpoints"]:
+            if honeypot in features["path"]:
+                risk_score += 0.8
+        
+        return min(risk_score, 1.0)
+    
+    async def _analyze_behavior(self, client_ip: str, features: Dict) -> float:
+        """Analyser le comportement de l'utilisateur"""
+        now = time.time()
+        
+        # Ajouter aux patterns récents
+        self.request_patterns[client_ip].append({
+            "timestamp": now,
+            "path": features["path"],
+            "method": features["method"]
+        })
+        
+        # Nettoyer les anciens patterns (garder 1 heure)
+        self.request_patterns[client_ip] = [
+            p for p in self.request_patterns[client_ip]
+            if now - p["timestamp"] < 3600
+        ]
+        
+        recent_requests = self.request_patterns[client_ip]
+        
+        # Analyser la fréquence
+        if len(recent_requests) > 50:  # Trop de requêtes
+            return 0.7
+        
+        # Analyser la diversité des chemins
+        unique_paths = set(r["path"] for r in recent_requests)
+        if len(unique_paths) > 20:  # Trop de chemins différents
+            return 0.6
+        
+        return 0.0
+    
+    async def _learn_from_request(self, features: Dict, risk_score: float):
+        """Apprentissage automatique à partir des requêtes"""
+        pattern_key = f"{features['method']}:{features['path']}"
+        
+        if risk_score < 0.3:
+            self.behavioral_model["normal_patterns"].add(pattern_key)
+        elif risk_score > 0.7:
+            self.behavioral_model["suspicious_patterns"].add(pattern_key)
+
 class SecurityAuditLogger:
     """Journal d'audit sécurisé"""
     
