@@ -526,29 +526,444 @@ async def get_threat_intelligence(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.get("/security/monitoring/stats")
-@limiter.limit("10/minute") if limiter else lambda x: x
-async def get_monitoring_stats(
+# --- PHASE 8 SMART COMMERCE SYSTEM ENDPOINTS ---
+
+@api_router.get("/shop/products")
+@limiter.limit("60/minute") if limiter else lambda x: x
+async def get_shop_products(
+    request: Request,
+    category: Optional[str] = None,
+    featured: Optional[bool] = None,
+    search: Optional[str] = None,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Obtenir les produits de la boutique avec filtres avancés"""
+    try:
+        if search:
+            products = await smart_commerce.search_products(search, category)
+        else:
+            products = await smart_commerce.get_all_products(category)
+        
+        # Filtrer par featured si spécifié
+        if featured is not None:
+            products = [p for p in products if p.is_featured == featured]
+        
+        # Convertir en dict pour JSON
+        products_data = []
+        for product in products:
+            if hasattr(product, '__dict__'):
+                product_dict = product.__dict__.copy()
+                # Convertir les datetime en ISO string
+                for key, value in product_dict.items():
+                    if isinstance(value, datetime):
+                        product_dict[key] = value.isoformat()
+                products_data.append(product_dict)
+            else:
+                products_data.append(product)
+        
+        return {
+            "products": products_data,
+            "total_count": len(products_data),
+            "categories_available": await smart_commerce.get_categories(),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/shop/products/{product_id}")
+@limiter.limit("120/minute") if limiter else lambda x: x
+async def get_shop_product_details(
+    product_id: str,
     request: Request,
     security_check: Dict = Depends(get_security_check)
 ):
-    """Statistiques de surveillance continue"""
+    """Obtenir les détails d'un produit spécifique"""
     try:
-        if continuous_monitor:
-            stats = continuous_monitor.get_monitoring_stats()
+        product = await smart_commerce.get_product_by_id(product_id)
+        
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        # Obtenir des recommandations IA
+        recommendations = await smart_commerce.ai_assistant.get_product_recommendations(product_id)
+        recommended_products = []
+        
+        for rec_id in recommendations:
+            rec_product = await smart_commerce.get_product_by_id(rec_id)
+            if rec_product and hasattr(rec_product, '__dict__'):
+                rec_dict = rec_product.__dict__.copy()
+                for key, value in rec_dict.items():
+                    if isinstance(value, datetime):
+                        rec_dict[key] = value.isoformat()
+                recommended_products.append(rec_dict)
+        
+        # Convertir le produit principal
+        if hasattr(product, '__dict__'):
+            product_dict = product.__dict__.copy()
+            for key, value in product_dict.items():
+                if isinstance(value, datetime):
+                    product_dict[key] = value.isoformat()
         else:
-            stats = {
-                "monitoring_active": False,
-                "reactive_mode": False,
-                "stats": {"message": "Monitoring not available"},
-                "performance": {"message": "Performance metrics not available"},
-                "alerts_count": 0,
-                "queue_size": 0
+            product_dict = product
+        
+        return {
+            "product": product_dict,
+            "recommendations": recommended_products,
+            "related_products": recommended_products[:3],  # Limiter à 3 pour l'affichage
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/shop/categories")
+@limiter.limit("30/minute") if limiter else lambda x: x
+async def get_shop_categories(
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Obtenir toutes les catégories de produits"""
+    try:
+        categories = await smart_commerce.get_categories()
+        
+        # Ajouter des statistiques pour chaque catégorie
+        products = await smart_commerce.get_all_products()
+        category_stats = {}
+        
+        for category_id in categories.keys():
+            category_products = [p for p in products if p.category == category_id]
+            category_stats[category_id] = {
+                "product_count": len(category_products),
+                "featured_count": len([p for p in category_products if p.is_featured]),
+                "price_range": {
+                    "min": min([p.price for p in category_products]) if category_products else 0,
+                    "max": max([p.price for p in category_products]) if category_products else 0
+                }
             }
         
         return {
-            "monitoring_stats": stats,
-            "phase": "7_SENTINEL_CORE",
+            "categories": categories,
+            "statistics": category_stats,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/shop/cart/create")
+@limiter.limit("20/minute") if limiter else lambda x: x
+async def create_shopping_cart(
+    request: Request,
+    user_data: Optional[Dict[str, Any]] = None,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Créer un nouveau panier"""
+    try:
+        # Générer un session ID unique
+        session_id = str(uuid.uuid4())
+        user_id = user_data.get("user_id") if user_data else None
+        
+        cart = await smart_commerce.create_cart(session_id, user_id)
+        
+        # Convertir en dict
+        if hasattr(cart, '__dict__'):
+            cart_dict = cart.__dict__.copy()
+            for key, value in cart_dict.items():
+                if isinstance(value, datetime):
+                    cart_dict[key] = value.isoformat()
+        else:
+            cart_dict = cart
+        
+        return {
+            "cart": cart_dict,
+            "session_id": session_id,
+            "expires_in": 3600,  # 1 heure
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/shop/cart/{cart_id}/add")
+@limiter.limit("30/minute") if limiter else lambda x: x
+async def add_to_cart(
+    cart_id: str,
+    item_data: Dict[str, Any],
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Ajouter un produit au panier"""
+    try:
+        product_id = item_data.get("product_id")
+        quantity = item_data.get("quantity", 1)
+        
+        if not product_id:
+            raise HTTPException(status_code=400, detail="product_id is required")
+        
+        success = await smart_commerce.add_to_cart(cart_id, product_id, quantity)
+        
+        if not success:
+            raise HTTPException(status_code=400, detail="Failed to add item to cart")
+        
+        # Obtenir le panier mis à jour
+        updated_cart = await smart_commerce.get_cart(cart_id)
+        
+        if hasattr(updated_cart, '__dict__'):
+            cart_dict = updated_cart.__dict__.copy()
+            for key, value in cart_dict.items():
+                if isinstance(value, datetime):
+                    cart_dict[key] = value.isoformat()
+        else:
+            cart_dict = updated_cart
+        
+        return {
+            "success": True,
+            "cart": cart_dict,
+            "message": "Item added to cart successfully",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/shop/cart/{cart_id}")
+@limiter.limit("60/minute") if limiter else lambda x: x
+async def get_cart(
+    cart_id: str,
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Obtenir les détails d'un panier"""
+    try:
+        cart = await smart_commerce.get_cart(cart_id)
+        
+        if not cart:
+            raise HTTPException(status_code=404, detail="Cart not found")
+        
+        # Obtenir des recommandations pour le panier
+        upsell_suggestions = await smart_commerce.ai_assistant.analyze_cart_for_upselling(cart)
+        cross_sell_suggestions = await smart_commerce.ai_assistant.get_cross_sell_suggestions(cart)
+        
+        if hasattr(cart, '__dict__'):
+            cart_dict = cart.__dict__.copy()
+            for key, value in cart_dict.items():
+                if isinstance(value, datetime):
+                    cart_dict[key] = value.isoformat()
+        else:
+            cart_dict = cart
+        
+        return {
+            "cart": cart_dict,
+            "ai_suggestions": {
+                "upsell": upsell_suggestions,
+                "cross_sell": cross_sell_suggestions
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/shop/assistant")
+@limiter.limit("20/minute") if limiter else lambda x: x
+async def smart_shopping_assistant(
+    message_data: Dict[str, Any],
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Assistant IA de shopping intégré"""
+    try:
+        message = message_data.get("message", "")
+        language = message_data.get("language", "fr")
+        cart_id = message_data.get("cart_id")
+        
+        if not message:
+            raise HTTPException(status_code=400, detail="Message is required")
+        
+        # Obtenir le panier si fourni
+        cart = None
+        if cart_id:
+            cart = await smart_commerce.get_cart(cart_id)
+        
+        # Générer la réponse personnalisée
+        response = await smart_commerce.ai_assistant.generate_personalized_response(
+            message, language, cart
+        )
+        
+        # Ajouter des produits recommandés basés sur le message
+        if any(word in message.lower() for word in ["produit", "product", "acheter", "buy", "منتج", "comprar"]):
+            # Rechercher des produits pertinents
+            search_results = await smart_commerce.search_products(message)
+            response["suggested_products"] = [
+                {
+                    "id": p.id,
+                    "name": p.name, 
+                    "price": p.price,
+                    "category": p.category,
+                    "qr_code": p.qr_code
+                } for p in search_results[:3]
+            ]
+        
+        return {
+            "response": response["message"],
+            "language": response["language"],
+            "type": response["response_type"],
+            "recommendations": response.get("recommendations", []),
+            "suggested_products": response.get("suggested_products", []),
+            "cart_id": cart_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/shop/checkout")
+@limiter.limit("10/minute") if limiter else lambda x: x
+async def checkout_cart(
+    checkout_data: Dict[str, Any],
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Processus de checkout (simulation)"""
+    try:
+        cart_id = checkout_data.get("cart_id")
+        payment_method = checkout_data.get("payment_method", "card")
+        billing_info = checkout_data.get("billing_info", {})
+        
+        if not cart_id:
+            raise HTTPException(status_code=400, detail="cart_id is required")
+        
+        cart = await smart_commerce.get_cart(cart_id)
+        if not cart:
+            raise HTTPException(status_code=404, detail="Cart not found")
+        
+        # Simulation du processus de paiement
+        order_id = str(uuid.uuid4())
+        
+        # Simuler selon la méthode de paiement
+        payment_simulation = {
+            "order_id": order_id,
+            "status": "pending",
+            "payment_method": payment_method,
+            "total_amount": cart.total_price if hasattr(cart, 'total_price') else 0,
+            "currency": "EUR",
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        if payment_method == "card":
+            payment_simulation.update({
+                "status": "completed",
+                "stripe_session_id": f"cs_sim_{order_id[:8]}",
+                "payment_intent": f"pi_sim_{order_id[:8]}"
+            })
+        elif payment_method == "crypto":
+            payment_simulation.update({
+                "status": "pending",
+                "wallet_address": "0x1234...5678",
+                "blockchain_tx": f"0xabcd...{order_id[:8]}"
+            })
+        elif payment_method == "paypal":
+            payment_simulation.update({
+                "status": "completed",
+                "paypal_order_id": f"PP_{order_id[:8]}",
+                "payer_id": f"PAYER_{order_id[:8]}"
+            })
+        
+        return {
+            "checkout_success": True,
+            "order": payment_simulation,
+            "estimated_delivery": (datetime.utcnow() + timedelta(days=7)).isoformat(),
+            "tracking_number": f"RIMAR{order_id[:10].upper()}",
+            "message": "Commande créée avec succès (simulation)",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/shop/qrcode/{product_id}")
+@limiter.limit("30/minute") if limiter else lambda x: x
+async def get_product_qr_code(
+    product_id: str,
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Obtenir le QR code d'un produit"""
+    try:
+        product = await smart_commerce.get_product_by_id(product_id)
+        
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        # Générer un nouveau QR code si nécessaire
+        qr_code = product.qr_code if hasattr(product, 'qr_code') and product.qr_code else \
+                  smart_commerce.qr_generator.generate_product_qr(product_id)
+        
+        return {
+            "product_id": product_id,
+            "qr_code": qr_code,
+            "product_url": f"https://rimareum.com/product/{product_id}",
+            "nfc_ready": True,
+            "social_sharing": {
+                "tiktok": f"https://tiktok.com/@rimareum/product/{product_id}",
+                "amazon": f"https://amazon.com/dp/RIMAR{product_id}",
+                "instagram": f"https://instagram.com/p/rimareum_{product_id}"
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/shop/status")
+async def get_smart_commerce_status(
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Statut du système Smart Commerce"""
+    try:
+        products = await smart_commerce.get_all_products()
+        categories = await smart_commerce.get_categories()
+        
+        return {
+            "phase": "8_SMART_COMMERCE",
+            "status": "ACTIVE",
+            "components": {
+                "dynamic_product_interface": True,
+                "ai_shopping_assistant": True,
+                "cart_system": True,
+                "qr_code_generation": True,
+                "nfc_ready": True,
+                "multilingual_support": True,
+                "payment_simulation": True
+            },
+            "statistics": {
+                "total_products": len(products),
+                "categories_count": len(categories),
+                "featured_products": len([p for p in products if hasattr(p, 'is_featured') and p.is_featured]),
+                "ai_recommendations_active": True
+            },
+            "integrations": {
+                "tiktok_shop_ready": True,
+                "amazon_store_ready": True,
+                "instagram_shopping": True,
+                "stripe_simulation": True,
+                "paypal_simulation": True,
+                "crypto_wallet_ready": True
+            },
             "timestamp": datetime.utcnow().isoformat()
         }
         
