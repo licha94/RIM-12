@@ -376,16 +376,19 @@ backend:
         comment: "✅ TESTED: Phase 8 AI Shopping Assistant IMPLEMENTED and WORKING. POST /shop/assistant endpoint operational with multilingual support (FR, EN, AR, ES). System integrated with existing multilingual chatbot from Phase 7. Running in fallback mode with mock responses, which is expected behavior until full AI integration. Infrastructure complete and ready."
 
   - task: "PHASE 8 - Smart Commerce Cart System"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Implementing advanced cart system with simulated Stripe/PayPal and crypto wallet support, session management"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Phase 8 Smart Commerce Cart System IMPLEMENTED and WORKING. All cart endpoints operational: POST /shop/cart/create, POST /shop/cart/{id}/add, GET /shop/cart/{id}. Cart creation, item addition, and AI suggestions (upsell/cross-sell) working correctly. Session management and expiration handling implemented. Ready for full product integration."
 
   - task: "PHASE 8 - QR Code Generation System"
     implemented: false
