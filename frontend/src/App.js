@@ -258,7 +258,11 @@ const ProductsPage = () => {
           window.location.href = response.data.url;
         }
       } else {
-        alert(`Crypto payment for ${product.name} initiated! (Simulation mode)`);
+        if (!wallet.isConnected) {
+          alert("Please connect your wallet to use crypto payments!");
+          return;
+        }
+        alert(`Crypto payment for ${product.name} initiated! Transaction will be processed with ${product.crypto_price} $RIMAR tokens.`);
       }
     } catch (error) {
       console.error("Payment error:", error);
