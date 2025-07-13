@@ -103,10 +103,15 @@ class ProductCreate(BaseModel):
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: str
-    name: str
+    username: str
+    password_hash: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    is_active: bool = True
+    api_keys: List[str] = []
+    failed_login_attempts: int = 0
+    last_login: Optional[datetime] = None
     wallet_address: Optional[str] = None
     rimar_balance: float = 0.0
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class Order(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -129,18 +134,64 @@ class PaymentTransaction(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class ChatMessage(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    session_id: str
-    user_id: Optional[str] = None
-    message: str
-    response: str
+    role: str
+    content: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class ChatSession(BaseModel):
+    session_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: Optional[str] = None
+    messages: List[ChatMessage] = []
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class WalletConnection(BaseModel):
     user_id: str
     wallet_address: str
     chain_id: int
-    balance: Optional[float] = None
+    balance_eth: float
+    balance_rimar: float
+    nft_count: int
+    connected_at: datetime = Field(default_factory=datetime.utcnow)
+
+class PaymentRequest(BaseModel):
+    amount: float
+    currency: str = "USD"
+    product_id: Optional[str] = None
+    payment_method: str = "card"  # card or crypto
+    wallet_address: Optional[str] = None
+
+class SecurityEvent(BaseModel):
+    event_type: str
+    ip_address: str
+    user_agent: str
+    risk_score: float
+    blocked: bool
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    details: Dict[str, Any] = {}
+
+# PHASE 6 Security Models
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class UserRegistration(BaseModel):
+    email: str
+    username: str
+    password: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    expires_in: int
+    api_key: str
+
+class SecurityReport(BaseModel):
+    ip_address: str
+    event_type: str
+    fingerprint: Optional[str] = None
+    captcha_response: Optional[str] = None
+    details: Dict[str, Any] = {}
 
 # --- AUTHENTICATION HELPERS ---
 async def get_current_user(authorization: Optional[str] = Header(None)) -> Optional[User]:
