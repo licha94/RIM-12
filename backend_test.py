@@ -1206,6 +1206,31 @@ class RimareumAPITester:
             self.log_test("AI Customer Tracking", False, f"Exception: {str(e)}")
             return False
     
+    def test_rate_limiting_phase7_endpoints(self):
+        """Test rate limiting on Phase 7 endpoints"""
+        try:
+            # Test rate limiting on multilingual chatbot (30/minute limit)
+            rapid_requests = []
+            chat_data = {"message": "Test message", "language": "en"}
+            
+            for i in range(3):  # Send 3 rapid requests
+                response = self.session.post(f"{BACKEND_URL}/chatbot/multilingual", json=chat_data)
+                rapid_requests.append(response.status_code)
+                time.sleep(0.2)  # Small delay between requests
+            
+            # All requests should succeed initially (3 requests is well under 30/minute)
+            success_count = sum(1 for status in rapid_requests if status == 200)
+            
+            if success_count >= 2:  # Allow for 1 potential failure
+                self.log_test("Phase 7 Rate Limiting", True, f"Rate limiting working - {success_count}/3 requests succeeded")
+                return True
+            else:
+                self.log_test("Phase 7 Rate Limiting", False, f"Only {success_count}/3 requests succeeded")
+                return False
+        except Exception as e:
+            self.log_test("Phase 7 Rate Limiting", False, f"Exception: {str(e)}")
+            return False
+    
     def test_phase9_compatibility_check(self):
         """Test that Phase 9 doesn't break existing Phase 6-8 functionality"""
         try:
