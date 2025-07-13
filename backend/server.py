@@ -415,7 +415,12 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> Optio
 # --- PRODUCT ROUTES ---
 
 @api_router.get("/products", response_model=List[Product])
-async def get_products(category: Optional[str] = None, featured: Optional[bool] = None):
+@limiter.limit("30/minute") if limiter else lambda x: x
+async def get_products(
+    request: Request,
+    category: Optional[str] = None, 
+    featured: Optional[bool] = None
+):
     """Get all products with optional filtering"""
     filter_query = {}
     if category:
@@ -427,7 +432,11 @@ async def get_products(category: Optional[str] = None, featured: Optional[bool] 
     return [Product(**product) for product in products]
 
 @api_router.get("/products/{product_id}", response_model=Product)
-async def get_product(product_id: str):
+@limiter.limit("60/minute") if limiter else lambda x: x
+async def get_product(
+    product_id: str,
+    request: Request
+):
     """Get a specific product"""
     product = await db.products.find_one({"id": product_id})
     if not product:
