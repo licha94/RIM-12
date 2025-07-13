@@ -345,6 +345,66 @@ backend:
         agent: "testing"
         comment: "✅ TESTED: Reactive Surveillance Mode IMPLEMENTED and WORKING. Monitoring stats endpoint operational showing surveillance status. Continuous monitoring components active. Reactive mode integrated with Sentinel Core system and responding correctly."
 
+  - task: "PHASE 8 - Dynamic Product Interface"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Starting Phase 8 - Implementing dynamic product catalog with categories (énergie, objets sacrés, NFT, modules IA), NFC-ready and QR code generation"
+
+  - task: "PHASE 8 - AI Shopping Assistant"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Implementing intelligent shopping assistant integrated with multilingual chatbot: cross-selling, upselling, user preferences tracking"
+
+  - task: "PHASE 8 - Smart Commerce Cart System"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Implementing advanced cart system with simulated Stripe/PayPal and crypto wallet support, session management"
+
+  - task: "PHASE 8 - QR Code Generation System"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Implementing automatic QR code generation for products with redirection to detailed product pages"
+
+  - task: "PHASE 8 - Advanced Product Features"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Implementing animated product pages with AI recommendations, TikTok Shop / Amazon Store infrastructure preparation"
+
 frontend:
   - task: "Core React App Structure"
     implemented: true
