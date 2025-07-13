@@ -254,7 +254,9 @@ class RimareumAPITester:
                 "user_id": str(uuid.uuid4()),
                 "wallet_address": "0x742d35Cc6634C0532925a3b8D4C9db96590e4CAF",
                 "chain_id": 1,
-                "balance": 1.5
+                "balance_eth": 1.5,
+                "balance_rimar": 1000.0,
+                "nft_count": 3
             }
             response = self.session.post(f"{BACKEND_URL}/wallet/connect", json=wallet_data)
             
