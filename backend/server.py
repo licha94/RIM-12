@@ -30,6 +30,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Create API router with /api prefix
+from fastapi import APIRouter
+api_router = APIRouter(prefix="/api")
+
 # Global storage for demo purposes
 products_db = []
 users_db = []
@@ -86,7 +90,7 @@ async def startup_event():
     print("✅ All endpoints ready")
 
 # Root endpoint
-@app.get("/")
+@api_router.get("/")
 async def root():
     """Root API endpoint"""
     return {
@@ -98,7 +102,7 @@ async def root():
     }
 
 # Health check
-@app.get("/health")
+@api_router.get("/health")
 async def health_check():
     """Health check endpoint"""
     return {
