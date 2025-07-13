@@ -325,106 +325,174 @@ class SmartCommerceManager:
         self.demo_products = self._create_demo_products()
     
     def _create_demo_products(self) -> List[SmartProduct]:
-        """Créer les 4 produits de démonstration"""
+        """Créer les 4 produits de démonstration Phase 9"""
         products = [
             SmartProduct(
                 id="cristal-solaire-rimareum",
                 name="Cristal Solaire RIMAREUM",
-                description="Cristal énergétique avancé captant et amplifiant l'énergie cosmique. Technologie quantique intégrée pour une harmonisation parfaite.",
+                description="Cristal énergétique avancé captant et amplifiant l'énergie cosmique. Technologie quantique intégrée pour harmonisation parfaite avec architecture Δ144. Puissance certifiée par les laboratoires RIMAREUM.",
                 category="energie",
                 price=299.99,
-                crypto_price={"ETH": 0.12, "RIMAR": 500},
+                crypto_price={"ETH": 0.12, "RIMAR": 500, "BTC": 0.0045},
                 stock=25,
                 is_featured=True,
                 metadata={
                     "power_level": "Ultra",
                     "frequency": "432 Hz",
                     "origin": "Laboratoires RIMAREUM",
-                    "certification": "Quantum Grade A+"
+                    "certification": "Quantum Grade A+",
+                    "dimensions": "8x8x12 cm",
+                    "weight": "340g",
+                    "activation_method": "Lumière solaire + intention",
+                    "compatibility": ["méditation", "guérison", "protection"],
+                    "energy_output": "750 unités quantiques/heure",
+                    "lifetime": "Illimitée avec entretien",
+                    "warranty": "10 ans garantie énergétique"
                 },
-                tags=["énergie", "cristal", "quantique", "premium"],
-                images=["https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=500"],
+                tags=["énergie", "cristal", "quantique", "premium", "solaire", "nadjib"],
+                images=[
+                    "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=500",
+                    "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500"
+                ],
                 rating=4.9,
                 reviews_count=127,
-                cross_sell_products=["clé-nadjibienne", "artefact-omega"],
-                upsell_products=["cristal-solaire-premium"]
+                cross_sell_products=["clé-nadjibienne-delta144", "artefact-omega-prototype"],
+                upsell_products=["cristal-solaire-premium", "cristal-solaire-collection"]
             ),
             SmartProduct(
                 id="clé-nadjibienne-delta144",
                 name="Clé Nadjibienne Δ144",
-                description="Artefact sacré forgé selon les anciens mystères. Clé dimensionnelle ouvrant les portes de la sagesse universelle.",
+                description="Artefact sacré forgé selon les anciens mystères nadjibiens. Clé dimensionnelle ouvrant les portes de la sagesse universelle et activant les codes Δ144. Signature énergétique unique de Maître Nadjib.",
                 category="objets_sacres",
                 price=444.44,
-                crypto_price={"ETH": 0.18, "RIMAR": 750},
+                crypto_price={"ETH": 0.18, "RIMAR": 750, "BTC": 0.0067},
                 stock=12,
                 is_featured=True,
                 metadata={
                     "sacred_level": "Master",
                     "dimension": "Δ144",
-                    "material": "Alliage Mystique",
-                    "blessing": "Nadjib Signature"
+                    "material": "Alliage Mystique Nadjibien",
+                    "blessing": "Signature Énergétique Nadjib",
+                    "activation_code": "Δ144-RIMAR-∞",
+                    "dimensions": "15x5x2 cm",
+                    "weight": "88g",
+                    "forging_date": "Équinoxe de Printemps 2024",
+                    "spiritual_power": "Ouverture dimensionnelle",
+                    "compatibility": ["méditation avancée", "voyage astral", "canalisation"],
+                    "energy_signature": "144 Hz harmonique",
+                    "rarity": "Édition Limitée Maître"
                 },
-                tags=["sacré", "clé", "mystique", "signature"],
-                images=["https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500"],
+                tags=["sacré", "clé", "mystique", "signature", "nadjib", "delta144"],
+                images=[
+                    "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500",
+                    "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=500"
+                ],
                 rating=5.0,
                 reviews_count=88,
                 cross_sell_products=["cristal-solaire-rimareum", "ia-guide-commerce"],
-                upsell_products=["clé-nadjibienne-omega"]
+                upsell_products=["clé-nadjibienne-omega", "collection-artefacts-sacrés"]
             ),
             SmartProduct(
                 id="artefact-omega-prototype",
                 name="Artefact-Ω Prototype",
-                description="NFT exclusif représentant l'évolution ultime de l'art numérique. Prototype unique de la collection Omega.",
+                description="NFT exclusif représentant l'évolution ultime de l'art numérique mystique. Prototype unique de la collection Omega, intégrant les codes quantiques RIMAREUM. Accès privilégié au métaverse sacré.",
                 category="nft",
                 price=1299.99,
-                crypto_price={"ETH": 0.5, "RIMAR": 2000},
+                crypto_price={"ETH": 0.5, "RIMAR": 2000, "BTC": 0.019},
                 stock=1,
                 is_featured=True,
                 metadata={
-                    "rarity": "Legendary",
-                    "edition": "1/1",
-                    "blockchain": "Ethereum",
-                    "creator": "RIMAREUM Labs"
+                    "rarity": "Legendary Prototype",
+                    "edition": "1/1 Unique",
+                    "blockchain": "Ethereum Mainnet",
+                    "creator": "RIMAREUM Labs x Nadjib",
+                    "token_standard": "ERC-721",
+                    "smart_contract": "0x1234...RIMAR",
+                    "creation_date": "2024-06-13",
+                    "file_format": ["PNG 4K", "MP4 Animation", "3D GLB"],
+                    "file_size": "25MB Package",
+                    "unlock_content": "Métaverse Access + Physical Art",
+                    "utility": ["DAO Governance", "Exclusive Events", "Metaverse Land"],
+                    "royalties": "5% Creator + 3% Platform",
+                    "authenticity": "Certificat Blockchain Permanent"
                 },
-                tags=["nft", "prototype", "omega", "exclusif"],
-                images=["https://images.unsplash.com/photo-1634973357973-f2ed2657db3c?w=500"],
+                tags=["nft", "prototype", "omega", "exclusif", "métaverse", "governance"],
+                images=[
+                    "https://images.unsplash.com/photo-1634973357973-f2ed2657db3c?w=500",
+                    "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=500"
+                ],
                 rating=4.8,
                 reviews_count=45,
                 cross_sell_products=["ia-guide-commerce", "cristal-solaire-rimareum"],
-                upsell_products=["artefact-omega-collection"]
+                upsell_products=["artefact-omega-collection", "métaverse-premium-access"]
             ),
             SmartProduct(
                 id="ia-guide-commerce",
                 name="IA Guide de Commerce",
-                description="Module d'intelligence artificielle avancée pour optimiser vos stratégies commerciales. Apprentissage automatique intégré.",
+                description="Module d'intelligence artificielle avancée pour optimiser vos stratégies commerciales. Intégration GPT-4o Enhanced avec apprentissage quantique RIMAREUM. API prête pour intégration métaverse.",
                 category="modules_ia",
                 price=599.99,
-                crypto_price={"ETH": 0.24, "RIMAR": 1000},
+                crypto_price={"ETH": 0.24, "RIMAR": 1000, "BTC": 0.009},
                 stock=50,
                 is_featured=False,
                 metadata={
-                    "ai_level": "GPT-4 Enhanced",
-                    "learning_type": "Deep Learning",
-                    "language_support": "Multi-langue",
-                    "integration": "API Ready"
+                    "ai_level": "GPT-4o Enhanced Quantum",
+                    "learning_type": "Deep Learning + Quantum Processing",
+                    "language_support": "Multi-langue (FR/EN/AR/ES/+)",
+                    "integration": "API REST + GraphQL + WebSocket",
+                    "processing_power": "1000 requêtes/minute",
+                    "data_training": "Commerce + Métaverse + Crypto",
+                    "specializations": ["E-commerce", "NFT Trading", "DAO Governance", "DeFi"],
+                    "update_frequency": "Temps réel via blockchain",
+                    "compatibility": ["Shopify", "WooCommerce", "Magento", "Custom"],
+                    "deployment": "Cloud + On-premise + Edge",
+                    "support": "24/7 + Documentation + Community",
+                    "license": "Commerciale avec redistribution"
                 },
-                tags=["ia", "commerce", "guide", "api"],
-                images=["https://images.unsplash.com/photo-1677442136019-21780ecad995?w=500"],
+                tags=["ia", "commerce", "guide", "api", "gpt4", "quantum"],
+                images=[
+                    "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=500",
+                    "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=500"
+                ],
                 rating=4.7,
                 reviews_count=203,
                 cross_sell_products=["artefact-omega-prototype", "clé-nadjibienne-delta144"],
-                upsell_products=["ia-guide-enterprise"]
+                upsell_products=["ia-guide-enterprise", "ia-suite-complete"]
             )
         ]
         
-        # Générer les QR codes pour tous les produits
+        # Générer les QR codes pour tous les produits avec URLs Phase 9
         for product in products:
+            # QR code pointant vers la page produit avec tracking
             product.qr_code = self.qr_generator.generate_product_qr(product.id)
+            
+            # Liens sociaux Phase 9 avec tracking
             product.social_links = {
-                "tiktok": f"https://tiktok.com/@rimareum/product/{product.id}",
-                "amazon": f"https://amazon.com/dp/RIMAR{product.id}",
-                "instagram": f"https://instagram.com/p/rimareum_{product.id}"
+                "tiktok": f"https://tiktok.com/@rimareum/product/{product.id}?utm_source=qr&utm_campaign=phase9",
+                "amazon": f"https://amazon.com/dp/RIMAR{product.id.upper()[:8]}?tag=rimareum-20",
+                "instagram": f"https://instagram.com/p/rimareum_{product.id}/?utm_source=qr&utm_medium=product",
+                "youtube": f"https://youtube.com/@rimareum/product-{product.id}",
+                "facebook": f"https://business.facebook.com/rimareum/product/{product.id}",
+                "twitter": f"https://twitter.com/rimareum/status/product-{product.id}",
+                "pinterest": f"https://pinterest.com/rimareum/product-{product.id}",
+                "linkedin": f"https://linkedin.com/company/rimareum/product/{product.id}"
             }
+            
+            # Métadonnées Phase 9 enrichies
+            product.metadata.update({
+                "phase": "9_PAYCORE",
+                "production_ready": True,
+                "payment_methods": ["stripe", "paypal", "crypto", "apple_pay", "google_pay"],
+                "shipping_countries": ["FR", "DZ", "AE", "EU", "US"],
+                "kyc_required": product.price > 1000,
+                "nft_receipt": True,
+                "ai_recommendations": True,
+                "social_commerce": True,
+                "metaverse_ready": True,
+                "sustainability_score": 95,
+                "carbon_neutral": True,
+                "ethical_sourcing": True
+            })
         
         return products
     
