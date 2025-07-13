@@ -1904,7 +1904,7 @@ class RimareumAPITester:
     
     def run_all_tests(self):
         """Run comprehensive test suite"""
-        print("🚀 Starting RIMAREUM Backend API Test Suite - PHASE 8 SMART COMMERCE")
+        print("🚀 Starting RIMAREUM Backend API Test Suite - PHASE 9 PAYCORE")
         print("=" * 70)
         print()
         
