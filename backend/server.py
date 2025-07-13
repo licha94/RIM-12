@@ -76,6 +76,28 @@ api_router = APIRouter(prefix="/api")
 stripe_checkout = None
 openai_chat = None
 
+# CORS configuration for security
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "https://localhost:3000"],  # Restrict to specific origins
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"],
+    expose_headers=["X-Security-Score", "X-Rate-Limit-Remaining"]
+)
+
+# Démarrer l'audit automatique
+@app.on_event("startup")
+async def startup_event():
+    """Démarrage des services de sécurité"""
+    asyncio.create_task(audit_scheduler.run_scheduled_audit())
+    print("🛡️ RIMAREUM PHASE 6 SECURITY ACTIVATED")
+    print("✅ WAF: Active")
+    print("✅ Guardian AI: Active")
+    print("✅ Rate Limiting: Active")
+    print("✅ Geo Blocking: Active")
+    print("✅ Audit Scheduler: Active")
+
 # --- MODELS ---
 
 class Product(BaseModel):
