@@ -1,6 +1,6 @@
 """
-🔐 MODULE SÉCURITÉ AVANCÉ RIMAREUM
-Système de protection intelligent avec WAF, anti-bot, audit et détection d'attaques
+🔐 MODULE SÉCURITÉ AVANCÉ RIMAREUM PHASE 6
+Système de protection intelligent avec WAF, anti-bot, audit, détection d'attaques, et IA Guardian
 """
 
 import asyncio
@@ -10,12 +10,20 @@ import logging
 import re
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Any
 from dataclasses import dataclass
 from collections import defaultdict, deque
 import ipaddress
+import bcrypt
+import httpx
+import secrets
 from fastapi import Request, HTTPException, Depends
-from fastapi.security import HTTPBearer
+from fastapi.security import HTTPBearer, OAuth2PasswordBearer
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import os
 
 # Configuration sécurité
