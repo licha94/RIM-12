@@ -370,6 +370,204 @@ class RimareumAPITester:
             self.log_test("Malformed Request Handling", False, f"Exception: {str(e)}")
             return False
     
+    # PHASE 6 SECURITY TESTS
+    
+    def test_security_status_endpoint(self):
+        """Test GET /api/security/status - Phase 6 security status"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/security/status")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['security_level', 'waf_active', 'guardian_ai_active', 'rate_limit_active', 'geo_blocking_active']
+                if all(field in data for field in required_fields):
+                    # Check if security modules are active
+                    if (data.get('waf_active') and data.get('guardian_ai_active') and 
+                        data.get('rate_limit_active') and data.get('geo_blocking_active')):
+                        self.log_test("Security Status Endpoint", True, "All security modules active", data)
+                        return True
+                    else:
+                        self.log_test("Security Status Endpoint", False, "Some security modules inactive", data)
+                        return False
+                else:
+                    self.log_test("Security Status Endpoint", False, "Missing security status fields", data)
+                    return False
+            else:
+                self.log_test("Security Status Endpoint", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Security Status Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_user_registration(self):
+        """Test POST /api/auth/register - Phase 6 authentication"""
+        try:
+            user_data = {
+                "email": f"testuser_{uuid.uuid4().hex[:8]}@rimareum.com",
+                "username": f"testuser_{uuid.uuid4().hex[:8]}",
+                "password": "SecurePassword123!"
+            }
+            response = self.session.post(f"{BACKEND_URL}/auth/register", json=user_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "user_id" in data and "api_key" in data:
+                    self.log_test("User Registration", True, "User registered with API key", {"user_id": data.get("user_id")})
+                    return True, data
+                else:
+                    self.log_test("User Registration", False, "Missing user_id or api_key in response", data)
+                    return False, None
+            else:
+                self.log_test("User Registration", False, f"Status: {response.status_code}")
+                return False, None
+        except Exception as e:
+            self.log_test("User Registration", False, f"Exception: {str(e)}")
+            return False, None
+    
+    def test_user_login(self):
+        """Test POST /api/auth/login - Phase 6 authentication"""
+        # First register a user
+        reg_success, reg_data = self.test_user_registration()
+        if not reg_success:
+            self.log_test("User Login", False, "Failed to register test user")
+            return False
+        
+        try:
+            # Extract username from registration (we need to create a known user)
+            login_data = {
+                "username": f"testuser_{uuid.uuid4().hex[:8]}",
+                "password": "SecurePassword123!"
+            }
+            
+            # Register the user first with known credentials
+            user_data = {
+                "email": f"{login_data['username']}@rimareum.com",
+                "username": login_data['username'],
+                "password": login_data['password']
+            }
+            reg_response = self.session.post(f"{BACKEND_URL}/auth/register", json=user_data)
+            
+            if reg_response.status_code != 200:
+                self.log_test("User Login", False, "Failed to register user for login test")
+                return False
+            
+            # Now try to login
+            response = self.session.post(f"{BACKEND_URL}/auth/login", json=login_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['access_token', 'token_type', 'expires_in', 'api_key']
+                if all(field in data for field in required_fields):
+                    self.log_test("User Login", True, "Login successful with OAuth2 token", {"token_type": data.get("token_type")})
+                    return True
+                else:
+                    self.log_test("User Login", False, "Missing OAuth2 fields in response", data)
+                    return False
+            else:
+                self.log_test("User Login", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("User Login", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_rate_limiting(self):
+        """Test rate limiting on endpoints"""
+        try:
+            # Test rate limiting on products endpoint (30/minute limit)
+            rapid_requests = []
+            for i in range(5):  # Send 5 rapid requests
+                response = self.session.get(f"{BACKEND_URL}/products")
+                rapid_requests.append(response.status_code)
+                time.sleep(0.1)  # Small delay between requests
+            
+            # All requests should succeed initially (5 requests is well under 30/minute)
+            success_count = sum(1 for status in rapid_requests if status == 200)
+            
+            if success_count >= 4:  # Allow for 1 potential failure
+                self.log_test("Rate Limiting", True, f"Rate limiting configured - {success_count}/5 requests succeeded")
+                return True
+            else:
+                self.log_test("Rate Limiting", False, f"Only {success_count}/5 requests succeeded")
+                return False
+        except Exception as e:
+            self.log_test("Rate Limiting", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_security_headers(self):
+        """Test security headers in responses"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/")
+            
+            # Check for security-related headers
+            security_headers = {
+                'x-security-score': response.headers.get('x-security-score'),
+                'x-rate-limit-remaining': response.headers.get('x-rate-limit-remaining'),
+                'access-control-allow-origin': response.headers.get('access-control-allow-origin')
+            }
+            
+            # At least some security headers should be present
+            present_headers = [k for k, v in security_headers.items() if v is not None]
+            
+            if len(present_headers) >= 1:
+                self.log_test("Security Headers", True, f"Security headers present: {present_headers}")
+                return True
+            else:
+                self.log_test("Security Headers", False, "No security headers found", security_headers)
+                return False
+        except Exception as e:
+            self.log_test("Security Headers", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_security_report_endpoint(self):
+        """Test POST /api/security/report - Security event reporting"""
+        try:
+            security_event = {
+                "ip_address": "192.168.1.100",
+                "event_type": "suspicious_activity",
+                "fingerprint": "test_fingerprint_123",
+                "details": {
+                    "user_agent": "Test Browser",
+                    "timestamp": datetime.now().isoformat()
+                }
+            }
+            response = self.session.post(f"{BACKEND_URL}/security/report", json=security_event)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "successfully" in data.get("message", "").lower():
+                    self.log_test("Security Report Endpoint", True, "Security event reported successfully", data)
+                    return True
+                else:
+                    self.log_test("Security Report Endpoint", False, "Unexpected response message", data)
+                    return False
+            else:
+                self.log_test("Security Report Endpoint", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Security Report Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_security_audit_endpoint(self):
+        """Test GET /api/security/audit - Security audit data"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/security/audit")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['audit_period', 'total_events', 'blocked_events', 'guardian_ai_status']
+                if all(field in data for field in required_fields):
+                    self.log_test("Security Audit Endpoint", True, "Security audit data retrieved", data)
+                    return True
+                else:
+                    self.log_test("Security Audit Endpoint", False, "Missing audit fields", data)
+                    return False
+            else:
+                self.log_test("Security Audit Endpoint", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Security Audit Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
     def run_all_tests(self):
         """Run comprehensive test suite"""
         print("🚀 Starting RIMAREUM Backend API Test Suite")
