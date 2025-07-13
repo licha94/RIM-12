@@ -143,7 +143,7 @@ const Header = () => {
         
         {/* Mobile Navigation */}
         <nav className="lg:hidden mt-4 grid grid-cols-3 gap-2">
-          {navItems.slice(0, 9).map((item) => (
+          {navItems.slice(0, 10).map((item) => (
             <button
               key={item.id}
               onClick={() => setCurrentPage(item.id)}
