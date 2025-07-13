@@ -584,7 +584,12 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "PHASE 8 - Dynamic Product Interface"
+    - "PHASE 8 - AI Shopping Assistant"
+    - "PHASE 8 - Smart Commerce Cart System"
+    - "PHASE 8 - QR Code Generation System"
+    - "PHASE 8 - Advanced Product Features"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
