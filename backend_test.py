@@ -1584,7 +1584,7 @@ class RimareumAPITester:
     
     def run_all_tests(self):
         """Run comprehensive test suite"""
-        print("🚀 Starting RIMAREUM Backend API Test Suite - PHASE 7 SENTINEL CORE")
+        print("🚀 Starting RIMAREUM Backend API Test Suite - PHASE 8 SMART COMMERCE")
         print("=" * 70)
         print()
         
@@ -1621,16 +1621,41 @@ class RimareumAPITester:
         self.test_ml_training_trigger()
         self.test_rate_limiting_phase7_endpoints()
         
-        # Product Management Tests
-        print("🛍️ PRODUCT MANAGEMENT TESTS")
+        # PHASE 8 SMART COMMERCE SYSTEM Tests
+        print("🛍️ PHASE 8 SMART COMMERCE SYSTEM TESTS")
+        print("-" * 40)
+        self.test_smart_commerce_status()
+        self.test_shop_products_all()
+        self.test_shop_products_category_filter()
+        self.test_shop_products_featured_filter()
+        self.test_shop_products_search()
+        self.test_shop_product_details()
+        self.test_shop_categories()
+        self.test_create_shopping_cart()
+        self.test_add_to_cart()
+        self.test_get_cart_details()
+        self.test_ai_shopping_assistant_french()
+        self.test_ai_shopping_assistant_english()
+        self.test_ai_shopping_assistant_arabic()
+        self.test_ai_shopping_assistant_spanish()
+        self.test_qr_code_generation()
+        self.test_checkout_card_payment()
+        self.test_checkout_crypto_payment()
+        self.test_checkout_paypal_payment()
+        self.test_demo_products_verification()
+        self.test_integration_with_existing_systems()
+        self.test_error_handling_edge_cases()
+        
+        # Product Management Tests (Legacy)
+        print("🛍️ LEGACY PRODUCT MANAGEMENT TESTS")
         print("-" * 30)
         self.test_get_all_products()
         self.test_filter_products_by_category()
         self.test_filter_featured_products()
         self.test_get_individual_products()
         
-        # Payment Flow Tests
-        print("💳 PAYMENT FLOW TESTS (Simulation Mode)")
+        # Payment Flow Tests (Legacy)
+        print("💳 LEGACY PAYMENT FLOW TESTS (Simulation Mode)")
         print("-" * 30)
         self.test_payment_checkout_with_product()
         self.test_payment_checkout_custom_amount()
@@ -1641,8 +1666,8 @@ class RimareumAPITester:
         self.test_wallet_connect()
         self.test_wallet_balance()
         
-        # AI Chat Tests
-        print("🤖 AI CHAT TESTS (Simulation Mode)")
+        # AI Chat Tests (Legacy)
+        print("🤖 LEGACY AI CHAT TESTS (Simulation Mode)")
         print("-" * 30)
         self.test_ai_chat_message()
         
@@ -1671,7 +1696,7 @@ class RimareumAPITester:
         print(f"Success Rate: {(passed/total)*100:.1f}%")
         
         if passed == total:
-            print("\n🎉 ALL TESTS PASSED! Backend API with PHASE 7 SENTINEL CORE is working correctly.")
+            print("\n🎉 ALL TESTS PASSED! Backend API with PHASE 8 SMART COMMERCE is working correctly.")
         else:
             print(f"\n⚠️ {total - passed} tests failed. Check details above.")
         
