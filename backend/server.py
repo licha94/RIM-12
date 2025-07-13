@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, Request
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -12,6 +12,17 @@ from datetime import datetime, timedelta
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 import asyncio
+import hashlib
+import json
+import base64
+
+# Import du module de sécurité
+try:
+    from .security_module import get_security_check, waf_instance
+except ImportError:
+    # Fallback si le module n'est pas trouvé
+    async def get_security_check(request: Request):
+        return {"allowed": True, "risk_score": 0.0}
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
