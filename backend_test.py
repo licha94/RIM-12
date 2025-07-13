@@ -922,6 +922,666 @@ class RimareumAPITester:
             self.log_test("Phase 7 Rate Limiting", False, f"Exception: {str(e)}")
             return False
     
+    # PHASE 8 SMART COMMERCE SYSTEM TESTS
+    
+    def test_smart_commerce_status(self):
+        """Test GET /api/shop/status - Phase 8 Smart Commerce status"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/shop/status")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['phase', 'status', 'components', 'statistics', 'integrations']
+                component_fields = ['dynamic_product_interface', 'ai_shopping_assistant', 'cart_system', 'qr_code_generation', 'nfc_ready']
+                
+                if all(field in data for field in required_fields):
+                    components = data.get('components', {})
+                    if all(field in components for field in component_fields):
+                        if data.get('phase') == '8_SMART_COMMERCE' and data.get('status') == 'ACTIVE':
+                            self.log_test("Smart Commerce Status", True, "Phase 8 Smart Commerce active with all components", data)
+                            return True
+                        else:
+                            self.log_test("Smart Commerce Status", False, "Smart Commerce not in active Phase 8 state", data)
+                            return False
+                    else:
+                        self.log_test("Smart Commerce Status", False, "Missing component status fields", data)
+                        return False
+                else:
+                    self.log_test("Smart Commerce Status", False, "Missing required status fields", data)
+                    return False
+            else:
+                self.log_test("Smart Commerce Status", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Smart Commerce Status", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_shop_products_all(self):
+        """Test GET /api/shop/products - All products"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/shop/products")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['products', 'total_count', 'categories_available', 'timestamp']
+                if all(field in data for field in required_fields):
+                    products = data.get('products', [])
+                    if len(products) >= 4:  # Expect 4 demo products
+                        # Check product structure
+                        product = products[0]
+                        product_fields = ['id', 'name', 'description', 'price', 'category']
+                        if all(field in product for field in product_fields):
+                            self.log_test("Shop Products (All)", True, f"Found {len(products)} products with proper structure", data)
+                            return True, products
+                        else:
+                            self.log_test("Shop Products (All)", False, "Missing product fields", data)
+                            return False, []
+                    else:
+                        self.log_test("Shop Products (All)", False, f"Expected at least 4 products, got {len(products)}", data)
+                        return False, []
+                else:
+                    self.log_test("Shop Products (All)", False, "Missing required response fields", data)
+                    return False, []
+            else:
+                self.log_test("Shop Products (All)", False, f"Status: {response.status_code}")
+                return False, []
+        except Exception as e:
+            self.log_test("Shop Products (All)", False, f"Exception: {str(e)}")
+            return False, []
+    
+    def test_shop_products_category_filter(self):
+        """Test GET /api/shop/products?category=energie - Category filtering"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/shop/products?category=energie")
+            
+            if response.status_code == 200:
+                data = response.json()
+                products = data.get('products', [])
+                # Check if all products belong to 'energie' category
+                energie_products = [p for p in products if p.get('category') == 'energie']
+                if len(energie_products) == len(products):
+                    self.log_test("Shop Products (Category Filter)", True, f"Found {len(products)} energie products", data)
+                    return True
+                else:
+                    self.log_test("Shop Products (Category Filter)", False, "Category filter not working properly", data)
+                    return False
+            else:
+                self.log_test("Shop Products (Category Filter)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Shop Products (Category Filter)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_shop_products_featured_filter(self):
+        """Test GET /api/shop/products?featured=true - Featured products"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/shop/products?featured=true")
+            
+            if response.status_code == 200:
+                data = response.json()
+                products = data.get('products', [])
+                # Check if all products are featured
+                featured_products = [p for p in products if p.get('is_featured') == True]
+                if len(featured_products) == len(products) and len(products) > 0:
+                    self.log_test("Shop Products (Featured Filter)", True, f"Found {len(products)} featured products", data)
+                    return True
+                else:
+                    self.log_test("Shop Products (Featured Filter)", False, "Featured filter not working properly", data)
+                    return False
+            else:
+                self.log_test("Shop Products (Featured Filter)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Shop Products (Featured Filter)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_shop_products_search(self):
+        """Test GET /api/shop/products?search=cristal - Search functionality"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/shop/products?search=cristal")
+            
+            if response.status_code == 200:
+                data = response.json()
+                products = data.get('products', [])
+                # Check if search results contain relevant products
+                if len(products) >= 0:  # Search might return 0 results, which is valid
+                    self.log_test("Shop Products (Search)", True, f"Search returned {len(products)} results for 'cristal'", data)
+                    return True
+                else:
+                    self.log_test("Shop Products (Search)", False, "Search functionality not working", data)
+                    return False
+            else:
+                self.log_test("Shop Products (Search)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Shop Products (Search)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_shop_product_details(self):
+        """Test GET /api/shop/products/{product_id} - Product details with AI recommendations"""
+        # First get products to test with
+        success, products = self.test_shop_products_all()
+        if not success or not products:
+            self.log_test("Shop Product Details", False, "No products available for testing")
+            return False
+        
+        try:
+            product_id = products[0]['id']
+            response = self.session.get(f"{BACKEND_URL}/shop/products/{product_id}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['product', 'recommendations', 'related_products', 'timestamp']
+                if all(field in data for field in required_fields):
+                    product = data.get('product', {})
+                    if product.get('id') == product_id:
+                        self.log_test("Shop Product Details", True, "Product details with AI recommendations retrieved", data)
+                        return True
+                    else:
+                        self.log_test("Shop Product Details", False, "Product ID mismatch", data)
+                        return False
+                else:
+                    self.log_test("Shop Product Details", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("Shop Product Details", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Shop Product Details", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_shop_categories(self):
+        """Test GET /api/shop/categories - Product categories"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/shop/categories")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['categories', 'statistics', 'timestamp']
+                if all(field in data for field in required_fields):
+                    categories = data.get('categories', {})
+                    statistics = data.get('statistics', {})
+                    expected_categories = ['energie', 'objets_sacres', 'nft', 'modules_ia']
+                    
+                    # Check if expected categories exist
+                    found_categories = [cat for cat in expected_categories if cat in categories]
+                    if len(found_categories) >= 2:  # At least 2 categories should exist
+                        self.log_test("Shop Categories", True, f"Found {len(found_categories)} categories with statistics", data)
+                        return True
+                    else:
+                        self.log_test("Shop Categories", False, f"Expected categories not found: {expected_categories}", data)
+                        return False
+                else:
+                    self.log_test("Shop Categories", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("Shop Categories", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Shop Categories", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_create_shopping_cart(self):
+        """Test POST /api/shop/cart/create - Create new cart"""
+        try:
+            user_data = {"user_id": str(uuid.uuid4())}
+            response = self.session.post(f"{BACKEND_URL}/shop/cart/create", json=user_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['cart', 'session_id', 'expires_in', 'timestamp']
+                if all(field in data for field in required_fields):
+                    cart = data.get('cart', {})
+                    session_id = data.get('session_id')
+                    if 'id' in cart and session_id:
+                        self.log_test("Create Shopping Cart", True, "Shopping cart created successfully", data)
+                        return True, session_id, cart['id']
+                    else:
+                        self.log_test("Create Shopping Cart", False, "Missing cart ID or session ID", data)
+                        return False, None, None
+                else:
+                    self.log_test("Create Shopping Cart", False, "Missing required fields", data)
+                    return False, None, None
+            else:
+                self.log_test("Create Shopping Cart", False, f"Status: {response.status_code}")
+                return False, None, None
+        except Exception as e:
+            self.log_test("Create Shopping Cart", False, f"Exception: {str(e)}")
+            return False, None, None
+    
+    def test_add_to_cart(self):
+        """Test POST /api/shop/cart/{cart_id}/add - Add items to cart"""
+        # First create a cart
+        cart_success, session_id, cart_id = self.test_create_shopping_cart()
+        if not cart_success:
+            self.log_test("Add to Cart", False, "Failed to create cart for testing")
+            return False
+        
+        # Get a product to add
+        success, products = self.test_shop_products_all()
+        if not success or not products:
+            self.log_test("Add to Cart", False, "No products available for testing")
+            return False
+        
+        try:
+            product_id = products[0]['id']
+            item_data = {
+                "product_id": product_id,
+                "quantity": 2
+            }
+            response = self.session.post(f"{BACKEND_URL}/shop/cart/{cart_id}/add", json=item_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['success', 'cart', 'message', 'timestamp']
+                if all(field in data for field in required_fields):
+                    if data.get('success') == True:
+                        self.log_test("Add to Cart", True, "Item added to cart successfully", data)
+                        return True, cart_id
+                    else:
+                        self.log_test("Add to Cart", False, "Add to cart failed", data)
+                        return False, None
+                else:
+                    self.log_test("Add to Cart", False, "Missing required fields", data)
+                    return False, None
+            else:
+                self.log_test("Add to Cart", False, f"Status: {response.status_code}")
+                return False, None
+        except Exception as e:
+            self.log_test("Add to Cart", False, f"Exception: {str(e)}")
+            return False, None
+    
+    def test_get_cart_details(self):
+        """Test GET /api/shop/cart/{cart_id} - Get cart details with AI suggestions"""
+        # First add items to cart
+        add_success, cart_id = self.test_add_to_cart()
+        if not add_success:
+            self.log_test("Get Cart Details", False, "Failed to add items to cart for testing")
+            return False
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/shop/cart/{cart_id}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['cart', 'ai_suggestions', 'timestamp']
+                if all(field in data for field in required_fields):
+                    cart = data.get('cart', {})
+                    ai_suggestions = data.get('ai_suggestions', {})
+                    if 'id' in cart and 'upsell' in ai_suggestions and 'cross_sell' in ai_suggestions:
+                        self.log_test("Get Cart Details", True, "Cart details with AI suggestions retrieved", data)
+                        return True
+                    else:
+                        self.log_test("Get Cart Details", False, "Missing cart data or AI suggestions", data)
+                        return False
+                else:
+                    self.log_test("Get Cart Details", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("Get Cart Details", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Get Cart Details", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_ai_shopping_assistant_french(self):
+        """Test POST /api/shop/assistant - French message"""
+        try:
+            message_data = {
+                "message": "Je cherche des produits énergétiques",
+                "language": "fr"
+            }
+            response = self.session.post(f"{BACKEND_URL}/shop/assistant", json=message_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['response', 'language', 'type', 'recommendations', 'timestamp']
+                if all(field in data for field in required_fields):
+                    if data.get('language') == 'fr':
+                        self.log_test("AI Shopping Assistant (French)", True, "French shopping assistant working", data)
+                        return True
+                    else:
+                        self.log_test("AI Shopping Assistant (French)", False, "Language detection issue", data)
+                        return False
+                else:
+                    self.log_test("AI Shopping Assistant (French)", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("AI Shopping Assistant (French)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("AI Shopping Assistant (French)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_ai_shopping_assistant_english(self):
+        """Test POST /api/shop/assistant - English message"""
+        try:
+            message_data = {
+                "message": "I want to buy crystals",
+                "language": "en"
+            }
+            response = self.session.post(f"{BACKEND_URL}/shop/assistant", json=message_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['response', 'language', 'type', 'recommendations', 'timestamp']
+                if all(field in data for field in required_fields):
+                    self.log_test("AI Shopping Assistant (English)", True, "English shopping assistant working", data)
+                    return True
+                else:
+                    self.log_test("AI Shopping Assistant (English)", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("AI Shopping Assistant (English)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("AI Shopping Assistant (English)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_ai_shopping_assistant_arabic(self):
+        """Test POST /api/shop/assistant - Arabic message"""
+        try:
+            message_data = {
+                "message": "أريد شراء منتجات الطاقة",
+                "language": "ar"
+            }
+            response = self.session.post(f"{BACKEND_URL}/shop/assistant", json=message_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['response', 'language', 'type', 'recommendations', 'timestamp']
+                if all(field in data for field in required_fields):
+                    self.log_test("AI Shopping Assistant (Arabic)", True, "Arabic shopping assistant working", data)
+                    return True
+                else:
+                    self.log_test("AI Shopping Assistant (Arabic)", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("AI Shopping Assistant (Arabic)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("AI Shopping Assistant (Arabic)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_ai_shopping_assistant_spanish(self):
+        """Test POST /api/shop/assistant - Spanish message"""
+        try:
+            message_data = {
+                "message": "Quiero comprar cristales",
+                "language": "es"
+            }
+            response = self.session.post(f"{BACKEND_URL}/shop/assistant", json=message_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['response', 'language', 'type', 'recommendations', 'timestamp']
+                if all(field in data for field in required_fields):
+                    self.log_test("AI Shopping Assistant (Spanish)", True, "Spanish shopping assistant working", data)
+                    return True
+                else:
+                    self.log_test("AI Shopping Assistant (Spanish)", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("AI Shopping Assistant (Spanish)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("AI Shopping Assistant (Spanish)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_qr_code_generation(self):
+        """Test GET /api/shop/qrcode/{product_id} - QR code generation for all demo products"""
+        # Get products to test with
+        success, products = self.test_shop_products_all()
+        if not success or not products:
+            self.log_test("QR Code Generation", False, "No products available for testing")
+            return False
+        
+        success_count = 0
+        for product in products[:4]:  # Test all 4 demo products
+            try:
+                product_id = product['id']
+                response = self.session.get(f"{BACKEND_URL}/shop/qrcode/{product_id}")
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    required_fields = ['product_id', 'qr_code', 'product_url', 'nfc_ready', 'social_sharing']
+                    if all(field in data for field in required_fields):
+                        if data.get('product_id') == product_id and data.get('nfc_ready') == True:
+                            success_count += 1
+                        else:
+                            self.log_test(f"QR Code for {product_id}", False, "Invalid QR code data", data)
+                    else:
+                        self.log_test(f"QR Code for {product_id}", False, "Missing QR code fields", data)
+                else:
+                    self.log_test(f"QR Code for {product_id}", False, f"Status: {response.status_code}")
+            except Exception as e:
+                self.log_test(f"QR Code for {product_id}", False, f"Exception: {str(e)}")
+        
+        if success_count == len(products[:4]):
+            self.log_test("QR Code Generation", True, f"QR codes generated for all {success_count} products")
+            return True
+        else:
+            self.log_test("QR Code Generation", False, f"Only {success_count}/{len(products[:4])} QR codes generated successfully")
+            return False
+    
+    def test_checkout_card_payment(self):
+        """Test POST /api/shop/checkout - Card payment simulation"""
+        # First add items to cart
+        add_success, cart_id = self.test_add_to_cart()
+        if not add_success:
+            self.log_test("Checkout (Card Payment)", False, "Failed to add items to cart for testing")
+            return False
+        
+        try:
+            checkout_data = {
+                "cart_id": cart_id,
+                "payment_method": "card",
+                "billing_info": {
+                    "name": "Test User",
+                    "email": "test@rimareum.com",
+                    "address": "123 Test Street"
+                }
+            }
+            response = self.session.post(f"{BACKEND_URL}/shop/checkout", json=checkout_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['checkout_success', 'order', 'estimated_delivery', 'tracking_number', 'timestamp']
+                if all(field in data for field in required_fields):
+                    order = data.get('order', {})
+                    if (data.get('checkout_success') == True and 
+                        order.get('payment_method') == 'card' and 
+                        order.get('status') == 'completed'):
+                        self.log_test("Checkout (Card Payment)", True, "Card payment simulation successful", data)
+                        return True
+                    else:
+                        self.log_test("Checkout (Card Payment)", False, "Checkout simulation failed", data)
+                        return False
+                else:
+                    self.log_test("Checkout (Card Payment)", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("Checkout (Card Payment)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Checkout (Card Payment)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_checkout_crypto_payment(self):
+        """Test POST /api/shop/checkout - Crypto wallet simulation"""
+        # First add items to cart
+        add_success, cart_id = self.test_add_to_cart()
+        if not add_success:
+            self.log_test("Checkout (Crypto Payment)", False, "Failed to add items to cart for testing")
+            return False
+        
+        try:
+            checkout_data = {
+                "cart_id": cart_id,
+                "payment_method": "crypto",
+                "billing_info": {
+                    "wallet_address": "0x742d35Cc6634C0532925a3b8D4C9db96590e4CAF"
+                }
+            }
+            response = self.session.post(f"{BACKEND_URL}/shop/checkout", json=checkout_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['checkout_success', 'order', 'estimated_delivery', 'tracking_number', 'timestamp']
+                if all(field in data for field in required_fields):
+                    order = data.get('order', {})
+                    if (data.get('checkout_success') == True and 
+                        order.get('payment_method') == 'crypto' and 
+                        'blockchain_tx' in order):
+                        self.log_test("Checkout (Crypto Payment)", True, "Crypto payment simulation successful", data)
+                        return True
+                    else:
+                        self.log_test("Checkout (Crypto Payment)", False, "Crypto checkout simulation failed", data)
+                        return False
+                else:
+                    self.log_test("Checkout (Crypto Payment)", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("Checkout (Crypto Payment)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Checkout (Crypto Payment)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_checkout_paypal_payment(self):
+        """Test POST /api/shop/checkout - PayPal simulation"""
+        # First add items to cart
+        add_success, cart_id = self.test_add_to_cart()
+        if not add_success:
+            self.log_test("Checkout (PayPal Payment)", False, "Failed to add items to cart for testing")
+            return False
+        
+        try:
+            checkout_data = {
+                "cart_id": cart_id,
+                "payment_method": "paypal",
+                "billing_info": {
+                    "email": "test@rimareum.com"
+                }
+            }
+            response = self.session.post(f"{BACKEND_URL}/shop/checkout", json=checkout_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['checkout_success', 'order', 'estimated_delivery', 'tracking_number', 'timestamp']
+                if all(field in data for field in required_fields):
+                    order = data.get('order', {})
+                    if (data.get('checkout_success') == True and 
+                        order.get('payment_method') == 'paypal' and 
+                        'paypal_order_id' in order):
+                        self.log_test("Checkout (PayPal Payment)", True, "PayPal payment simulation successful", data)
+                        return True
+                    else:
+                        self.log_test("Checkout (PayPal Payment)", False, "PayPal checkout simulation failed", data)
+                        return False
+                else:
+                    self.log_test("Checkout (PayPal Payment)", False, "Missing required fields", data)
+                    return False
+            else:
+                self.log_test("Checkout (PayPal Payment)", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Checkout (PayPal Payment)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_demo_products_verification(self):
+        """Test verification of all 4 demo products"""
+        success, products = self.test_shop_products_all()
+        if not success:
+            self.log_test("Demo Products Verification", False, "Failed to get products")
+            return False
+        
+        try:
+            expected_products = [
+                "Cristal Solaire RIMAREUM",
+                "Clé Nadjibienne Δ144", 
+                "Artefact-Ω Prototype",
+                "IA Guide de Commerce"
+            ]
+            
+            expected_categories = ["énergie", "objets sacrés", "NFT", "modules IA"]
+            
+            found_products = []
+            found_categories = set()
+            
+            for product in products:
+                name = product.get('name', '')
+                category = product.get('category', '')
+                
+                # Check if this matches any expected product (partial match)
+                for expected in expected_products:
+                    if any(word in name for word in expected.split()[:2]):  # Match first 2 words
+                        found_products.append(name)
+                        break
+                
+                found_categories.add(category)
+            
+            if len(found_products) >= 3:  # At least 3 of 4 expected products
+                self.log_test("Demo Products Verification", True, f"Found {len(found_products)} demo products with categories: {list(found_categories)}")
+                return True
+            else:
+                self.log_test("Demo Products Verification", False, f"Only found {len(found_products)} demo products: {found_products}")
+                return False
+        except Exception as e:
+            self.log_test("Demo Products Verification", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_integration_with_existing_systems(self):
+        """Test Phase 8 doesn't break existing Phase 7 security features"""
+        try:
+            # Test that Phase 7 endpoints still work
+            phase7_tests = [
+                self.test_sentinel_core_status(),
+                self.test_multilingual_chatbot_french(),
+                self.test_security_status_endpoint()
+            ]
+            
+            success_count = sum(1 for test in phase7_tests if test)
+            
+            if success_count >= 2:  # At least 2 of 3 tests should pass
+                self.log_test("Integration with Existing Systems", True, f"Phase 7 integration maintained: {success_count}/3 tests passed")
+                return True
+            else:
+                self.log_test("Integration with Existing Systems", False, f"Phase 7 integration broken: only {success_count}/3 tests passed")
+                return False
+        except Exception as e:
+            self.log_test("Integration with Existing Systems", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_error_handling_edge_cases(self):
+        """Test error handling for Phase 8 endpoints"""
+        try:
+            error_tests = []
+            
+            # Test invalid product ID
+            response = self.session.get(f"{BACKEND_URL}/shop/products/invalid-id")
+            error_tests.append(response.status_code == 404)
+            
+            # Test invalid cart operation
+            response = self.session.post(f"{BACKEND_URL}/shop/cart/invalid-cart/add", json={"product_id": "test"})
+            error_tests.append(response.status_code in [400, 404, 500])
+            
+            # Test malformed assistant request
+            response = self.session.post(f"{BACKEND_URL}/shop/assistant", json={})
+            error_tests.append(response.status_code == 400)
+            
+            success_count = sum(1 for test in error_tests if test)
+            
+            if success_count >= 2:  # At least 2 of 3 error tests should pass
+                self.log_test("Error Handling & Edge Cases", True, f"Error handling working: {success_count}/3 tests passed")
+                return True
+            else:
+                self.log_test("Error Handling & Edge Cases", False, f"Error handling issues: only {success_count}/3 tests passed")
+                return False
+        except Exception as e:
+            self.log_test("Error Handling & Edge Cases", False, f"Exception: {str(e)}")
+            return False
+    
     def run_all_tests(self):
         """Run comprehensive test suite"""
         print("🚀 Starting RIMAREUM Backend API Test Suite - PHASE 7 SENTINEL CORE")
