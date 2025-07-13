@@ -510,9 +510,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "PHASE 6 - Frontend Security Hardening"
-    - "PHASE 6 - Production Build Configuration"
-    - "PHASE 6 - Client-Side Security Integration"
+    - "PHASE 7 - Intelligent Detection Module"
+    - "PHASE 7 - GPT-Secure 4.0 Back-Office"
+    - "PHASE 7 - Smart Firewall ML"
+    - "PHASE 7 - Multilingual Chatbot"
+    - "PHASE 7 - Reactive Surveillance Mode"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
