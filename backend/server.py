@@ -179,7 +179,7 @@ async def create_checkout_session(
                 raise HTTPException(status_code=400, detail="Amount or product_id required")
         
         # Use origin from header or fallback
-        base_url = origin or "https://eb2c557d-4a06-4612-95e0-b782279cb9ef.preview.emergentagent.com"
+        base_url = origin or "https://20423e44-cefc-4fee-92df-010802a91699.preview.emergentagent.com"
         
         checkout_request = CheckoutSessionRequest(
             amount=float(amount),
