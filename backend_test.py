@@ -925,7 +925,7 @@ class RimareumAPITester:
     
     def run_all_tests(self):
         """Run comprehensive test suite"""
-        print("🚀 Starting RIMAREUM Backend API Test Suite - PHASE 6 SECURITY")
+        print("🚀 Starting RIMAREUM Backend API Test Suite - PHASE 7 SENTINEL CORE")
         print("=" * 70)
         print()
         
@@ -945,6 +945,22 @@ class RimareumAPITester:
         self.test_security_headers()
         self.test_security_report_endpoint()
         self.test_security_audit_endpoint()
+        
+        # PHASE 7 SENTINEL CORE Tests
+        print("🛡️ PHASE 7 SENTINEL CORE TESTS")
+        print("-" * 30)
+        self.test_sentinel_core_status()
+        self.test_multilingual_chatbot_french()
+        self.test_multilingual_chatbot_english()
+        self.test_multilingual_chatbot_arabic()
+        self.test_multilingual_chatbot_spanish()
+        self.test_supported_languages_endpoint()
+        self.test_gpt_security_report()
+        self.test_threat_intelligence()
+        self.test_monitoring_stats()
+        self.test_ml_model_info()
+        self.test_ml_training_trigger()
+        self.test_rate_limiting_phase7_endpoints()
         
         # Product Management Tests
         print("🛍️ PRODUCT MANAGEMENT TESTS")
@@ -996,7 +1012,7 @@ class RimareumAPITester:
         print(f"Success Rate: {(passed/total)*100:.1f}%")
         
         if passed == total:
-            print("\n🎉 ALL TESTS PASSED! Backend API with PHASE 6 Security is working correctly.")
+            print("\n🎉 ALL TESTS PASSED! Backend API with PHASE 7 SENTINEL CORE is working correctly.")
         else:
             print(f"\n⚠️ {total - passed} tests failed. Check details above.")
         
