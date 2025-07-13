@@ -226,6 +226,7 @@ const HomePage = () => {
 
 // Products Page
 const ProductsPage = () => {
+  const { wallet } = useApp();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
