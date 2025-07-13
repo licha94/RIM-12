@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Build RIMAREUM - Revolutionary E-commerce & Crypto Platform with e-commerce (physical + digital products), NFT marketplace, crypto payments ($RIMAR, USDT, ETH), wallet integration, DAO governance, AI assistant, and admin dashboard"
+user_problem_statement: "PHASE 11 - RIMAREUM V11 MULTIVERS LOGIQUE - Implémentation du Sélecteur de Réalité Multivers, Sanctuaire IA-Humain avec transmission vocale et miroir vibratoire, Dashboard CEO Global pour monitoring international. Activation TERRA VITA TRAD, codes Δ144, Token TRIO (GPT + DeepSeek + NADJIB). Écosystèmes: TERRA VITA TRAD, ALPHA SYNERGY, PUREWEAR, QUANTUM NEXUS, CRYSTALLINE MATRIX, SOVEREIGN REALMS, INFINITE COMMERCE, COSMIC GOVERNANCE. Déploiement international: USA, Algérie, Europe, Cap-Vert, Mauritanie. Conformité INPI, OMPI, RAK ICC."
 
 backend:
   - task: "Core API Structure with FastAPI"
