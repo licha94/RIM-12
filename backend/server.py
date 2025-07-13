@@ -1,6 +1,12 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, Request, status
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
@@ -15,6 +21,7 @@ import asyncio
 import hashlib
 import json
 import base64
+import bcrypt
 
 # Import du module de sécurité
 try:
