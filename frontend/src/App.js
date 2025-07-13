@@ -1422,6 +1422,8 @@ const App = () => {
         return <ContactPage />;
       case 'legal':
         return <LegalPage />;
+      case 'track':
+        return <TrackOrderPage />;
       default:
         return <HomePage />;
     }
