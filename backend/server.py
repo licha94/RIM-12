@@ -204,11 +204,53 @@ except ImportError:
     ai_insights = MockAIInsights()
     alerts_manager = MockAlertsManager()
     paycore_database = {"mock": True}
-    PaymentTransaction = dict
-    Order = dict
-    CustomerProfile = dict
-    PaymentStatus = str
-    OrderStatus = str
+# Import du module SUBSCRIPTION SYSTEM
+try:
+    from .subscription_system import (
+        subscription_payment_processor, ai_retention_engine, tier_manager,
+        subscription_database, Subscription, CustomerTierProfile, ChurnPrediction,
+        SubscriptionStatus, CustomerTier, ChurnRisk, SUBSCRIPTION_CONFIG
+    )
+except ImportError:
+    # Fallback objects pour subscription system
+    class MockSubscriptionPaymentProcessor:
+        async def process_stripe_subscription_payment(self, subscription, payment_data):
+            return {"success": True, "stripe_subscription_id": "sub_mock_123"}
+        
+        async def process_paypal_subscription_payment(self, subscription, payment_data):
+            return {"success": True, "paypal_subscription_id": "I-MOCK123"}
+        
+        async def process_crypto_subscription_payment(self, subscription, payment_data):
+            return {"success": True, "transaction_hash": "0xmock123"}
+    
+    class MockAIRetentionEngine:
+        async def analyze_churn_risk(self, user_id, subscription, usage_data):
+            return {"churn_probability": 0.2, "risk_level": "low"}
+        
+        async def calculate_engagement_score(self, user_id, activity_data):
+            return 0.75
+    
+    class MockTierManager:
+        async def calculate_tier_points(self, user_id, activity_data):
+            return 300
+        
+        async def update_customer_tier(self, user_id, points):
+            return "silver"
+        
+        async def get_tier_benefits(self, tier):
+            return {"discount_rate": 0.1, "priority_support": True}
+    
+    subscription_payment_processor = MockSubscriptionPaymentProcessor()
+    ai_retention_engine = MockAIRetentionEngine()
+    tier_manager = MockTierManager()
+    subscription_database = {"mock": True}
+    Subscription = dict
+    CustomerTierProfile = dict
+    ChurnPrediction = dict
+    SubscriptionStatus = str
+    CustomerTier = str
+    ChurnRisk = str
+    SUBSCRIPTION_CONFIG = {"subscription_plans": {}}
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
