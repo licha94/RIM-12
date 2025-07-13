@@ -529,30 +529,44 @@ async def get_payment_status(
 # --- WALLET ROUTES ---
 
 @api_router.post("/wallet/connect")
-async def connect_wallet(wallet_data: WalletConnection):
+@limiter.limit("20/minute") if limiter else lambda x: x
+async def connect_wallet(
+    wallet_data: WalletConnection,
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
     """Connect crypto wallet"""
-    # Update or create user with wallet address
-    user = await db.users.find_one({"id": wallet_data.user_id})
-    if user:
-        await db.users.update_one(
-            {"id": wallet_data.user_id},
-            {"$set": {"wallet_address": wallet_data.wallet_address}}
-        )
-    
-    # Store wallet connection
-    await db.wallet_connections.insert_one(wallet_data.dict())
-    return {"message": "Wallet connected successfully"}
+    try:
+        # Store wallet connection
+        await db.wallet_connections.insert_one(wallet_data.dict())
+        
+        return {"message": "Wallet connected successfully", "address": wallet_data.wallet_address}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.get("/wallet/balance/{wallet_address}")
-async def get_wallet_balance(wallet_address: str):
-    """Get wallet balance (mock for MVP)"""
-    # In production, this would query actual blockchain
-    return {
-        "address": wallet_address,
-        "eth_balance": 1.5,
-        "rimar_balance": 1000.0,
-        "nft_count": 5
-    }
+@api_router.get("/wallet/balance/{address}")
+@limiter.limit("100/minute") if limiter else lambda x: x
+async def get_wallet_balance(
+    address: str,
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Get wallet balance (simulated)"""
+    try:
+        # Simulate wallet balance
+        mock_balance = {
+            "address": address,
+            "eth_balance": 1.25,
+            "rimar_balance": 1000.0,
+            "nft_count": 3,
+            "last_updated": datetime.utcnow().isoformat()
+        }
+        
+        return mock_balance
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- AI CHAT ROUTES ---
 
