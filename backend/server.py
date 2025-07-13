@@ -113,7 +113,7 @@ async def health_check():
 
 # --- PRODUCT MANAGEMENT ENDPOINTS ---
 
-@app.get("/products")
+@api_router.get("/products")
 async def get_products(category: Optional[str] = None, featured: Optional[bool] = None):
     """Get all products with optional filtering"""
     filtered_products = products_db.copy()
@@ -126,7 +126,7 @@ async def get_products(category: Optional[str] = None, featured: Optional[bool] 
     
     return filtered_products
 
-@app.get("/products/{product_id}")
+@api_router.get("/products/{product_id}")
 async def get_product(product_id: str):
     """Get specific product by ID"""
     product = next((p for p in products_db if p["id"] == product_id), None)
@@ -136,7 +136,7 @@ async def get_product(product_id: str):
 
 # --- PAYMENT ENDPOINTS ---
 
-@app.post("/payments/checkout/session")
+@api_router.post("/payments/checkout/session")
 async def create_checkout_session(payment_data: Dict[str, Any]):
     """Create payment checkout session (simulation mode)"""
     # Simulate payment processing
@@ -150,7 +150,7 @@ async def create_checkout_session(payment_data: Dict[str, Any]):
 
 # --- WALLET ENDPOINTS ---
 
-@app.post("/wallet/connect")
+@api_router.post("/wallet/connect")
 async def connect_wallet(wallet_data: Dict[str, Any]):
     """Connect crypto wallet"""
     return {
@@ -160,7 +160,7 @@ async def connect_wallet(wallet_data: Dict[str, Any]):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@app.get("/wallet/balance/{wallet_address}")
+@api_router.get("/wallet/balance/{wallet_address}")
 async def get_wallet_balance(wallet_address: str):
     """Get wallet balance (mock data)"""
     return {
@@ -173,7 +173,7 @@ async def get_wallet_balance(wallet_address: str):
 
 # --- AI CHAT ENDPOINTS ---
 
-@app.post("/chat/message")
+@api_router.post("/chat/message")
 async def chat_message(chat_data: Dict[str, Any]):
     """AI chat message (simulation mode)"""
     return {
@@ -184,7 +184,7 @@ async def chat_message(chat_data: Dict[str, Any]):
 
 # --- ADMIN ENDPOINTS ---
 
-@app.get("/admin/stats")
+@api_router.get("/admin/stats")
 async def get_admin_stats():
     """Get admin statistics"""
     return {
