@@ -726,6 +726,7 @@ test_plan:
     - "PHASE 9 - Commerce Backoffice"
     - "PHASE 9 - Real-time Alerts System"
     - "PHASE 9 - AI Customer Tracking"
+    - "PHASE 9 - Enhanced Demo Products"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
