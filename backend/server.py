@@ -281,14 +281,14 @@ async def get_security_audit():
 app.include_router(api_router)
 
 # Error handlers
-@api_router.exception_handler(404)
+@app.exception_handler(404)
 async def not_found_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=404,
         content={"detail": "Endpoint not found", "path": str(request.url.path)}
     )
 
-@api_router.exception_handler(500)
+@app.exception_handler(500)
 async def internal_error_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
