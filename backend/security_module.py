@@ -202,7 +202,7 @@ SECURITY_CONFIG = {
 
 @dataclass
 class SecurityEvent:
-    """Événement de sécurité"""
+    """Événement de sécurité Phase 7"""
     timestamp: datetime
     ip_address: str
     user_agent: str
@@ -212,6 +212,218 @@ class SecurityEvent:
     severity: str
     blocked: bool
     details: Dict
+    ml_score: float = 0.0
+    gpt_analysis: Optional[str] = None
+    auto_corrected: bool = False
+    threat_prediction: Optional[str] = None
+
+@dataclass
+class ThreatIntelligence:
+    """Intelligence sur les menaces"""
+    ip_reputation: Dict[str, float] = field(default_factory=dict)
+    domain_reputation: Dict[str, float] = field(default_factory=dict)
+    attack_patterns: List[str] = field(default_factory=list)
+    emerging_threats: List[str] = field(default_factory=list)
+    threat_actors: Dict[str, Any] = field(default_factory=dict)
+    ioc_database: Dict[str, Any] = field(default_factory=dict)
+    last_update: datetime = field(default_factory=datetime.utcnow)
+
+class MLThreatDetector:
+    """Détecteur de menaces basé sur Machine Learning"""
+    
+    def __init__(self):
+        self.model = IsolationForest(
+            contamination=0.1,
+            random_state=42,
+            n_estimators=100
+        )
+        self.scaler = StandardScaler()
+        self.is_trained = False
+        self.training_data = []
+        self.feature_names = [
+            'request_rate', 'payload_size', 'url_length', 'param_count',
+            'header_count', 'user_agent_entropy', 'path_depth', 'suspicious_patterns',
+            'geo_risk_score', 'reputation_score', 'time_of_day', 'request_interval'
+        ]
+        self.threat_cache = {}
+        self.model_version = "1.0.0"
+        self.last_training = datetime.utcnow()
+    
+    def extract_features(self, request: Request, client_ip: str, context: Dict) -> np.ndarray:
+        """Extraire les caractéristiques d'une requête pour le ML"""
+        try:
+            # Caractéristiques de base
+            url = str(request.url)
+            headers = dict(request.headers)
+            user_agent = headers.get('user-agent', '')
+            
+            # Calculs des métriques
+            request_rate = context.get('request_rate', 0)
+            payload_size = len(str(request.body) if hasattr(request, 'body') else '')
+            url_length = len(url)
+            param_count = len(request.query_params)
+            header_count = len(headers)
+            user_agent_entropy = self._calculate_entropy(user_agent)
+            path_depth = url.count('/')
+            suspicious_patterns = self._count_suspicious_patterns(url + ' ' + user_agent)
+            geo_risk_score = context.get('geo_risk_score', 0)
+            reputation_score = context.get('reputation_score', 0)
+            time_of_day = datetime.utcnow().hour
+            request_interval = context.get('request_interval', 0)
+            
+            features = np.array([
+                request_rate, payload_size, url_length, param_count,
+                header_count, user_agent_entropy, path_depth, suspicious_patterns,
+                geo_risk_score, reputation_score, time_of_day, request_interval
+            ])
+            
+            return features.reshape(1, -1)
+            
+        except Exception as e:
+            logging.error(f"Erreur extraction features ML: {e}")
+            return np.zeros((1, len(self.feature_names)))
+    
+    def _calculate_entropy(self, text: str) -> float:
+        """Calculer l'entropie d'un texte"""
+        if not text:
+            return 0.0
+        
+        # Compter les caractères
+        char_counts = {}
+        for char in text:
+            char_counts[char] = char_counts.get(char, 0) + 1
+        
+        # Calculer l'entropie
+        entropy = 0.0
+        length = len(text)
+        for count in char_counts.values():
+            probability = count / length
+            entropy -= probability * np.log2(probability)
+        
+        return entropy
+    
+    def _count_suspicious_patterns(self, text: str) -> int:
+        """Compter les patterns suspects dans un texte"""
+        count = 0
+        for pattern in SECURITY_CONFIG["suspicious_patterns"]:
+            if re.search(pattern, text, re.IGNORECASE):
+                count += 1
+        return count
+    
+    def predict_threat(self, features: np.ndarray) -> Tuple[float, str]:
+        """Prédire si une requête est une menace"""
+        if not self.is_trained:
+            return 0.0, "model_not_trained"
+        
+        try:
+            # Normaliser les features
+            features_scaled = self.scaler.transform(features)
+            
+            # Prédiction
+            anomaly_score = self.model.decision_function(features_scaled)[0]
+            is_anomaly = self.model.predict(features_scaled)[0] == -1
+            
+            # Convertir en score de menace (0-1)
+            threat_score = max(0.0, min(1.0, (1.0 - anomaly_score) / 2.0))
+            
+            threat_level = "high" if threat_score > 0.8 else "medium" if threat_score > 0.5 else "low"
+            
+            return threat_score, threat_level
+            
+        except Exception as e:
+            logging.error(f"Erreur prédiction ML: {e}")
+            return 0.0, "prediction_error"
+    
+    def train_model(self, training_data: List[Dict]):
+        """Entraîner le modèle ML"""
+        if len(training_data) < 100:
+            return False
+        
+        try:
+            # Préparer les données
+            features_list = []
+            for data in training_data:
+                features = np.array([
+                    data.get('request_rate', 0),
+                    data.get('payload_size', 0),
+                    data.get('url_length', 0),
+                    data.get('param_count', 0),
+                    data.get('header_count', 0),
+                    data.get('user_agent_entropy', 0),
+                    data.get('path_depth', 0),
+                    data.get('suspicious_patterns', 0),
+                    data.get('geo_risk_score', 0),
+                    data.get('reputation_score', 0),
+                    data.get('time_of_day', 0),
+                    data.get('request_interval', 0)
+                ])
+                features_list.append(features)
+            
+            X = np.array(features_list)
+            
+            # Normaliser les données
+            X_scaled = self.scaler.fit_transform(X)
+            
+            # Entraîner le modèle
+            self.model.fit(X_scaled)
+            self.is_trained = True
+            self.last_training = datetime.utcnow()
+            
+            # Sauvegarder le modèle
+            self.save_model()
+            
+            return True
+            
+        except Exception as e:
+            logging.error(f"Erreur entraînement ML: {e}")
+            return False
+    
+    def save_model(self):
+        """Sauvegarder le modèle ML"""
+        try:
+            model_data = {
+                'model': self.model,
+                'scaler': self.scaler,
+                'feature_names': self.feature_names,
+                'version': self.model_version,
+                'last_training': self.last_training
+            }
+            joblib.dump(model_data, '/tmp/rimareum_ml_model.pkl')
+        except Exception as e:
+            logging.error(f"Erreur sauvegarde modèle: {e}")
+    
+    def load_model(self):
+        """Charger le modèle ML"""
+        try:
+            if os.path.exists('/tmp/rimareum_ml_model.pkl'):
+                model_data = joblib.load('/tmp/rimareum_ml_model.pkl')
+                self.model = model_data['model']
+                self.scaler = model_data['scaler']
+                self.feature_names = model_data['feature_names']
+                self.model_version = model_data['version']
+                self.last_training = model_data['last_training']
+                self.is_trained = True
+                return True
+        except Exception as e:
+            logging.error(f"Erreur chargement modèle: {e}")
+        return False
+    
+    def update_training_data(self, request_data: Dict):
+        """Mettre à jour les données d'entraînement"""
+        self.training_data.append(request_data)
+        
+        # Limite de données en mémoire
+        if len(self.training_data) > 10000:
+            self.training_data = self.training_data[-5000:]
+        
+        # Réentraîner périodiquement
+        if len(self.training_data) % 1000 == 0:
+            asyncio.create_task(self._retrain_model())
+    
+    async def _retrain_model(self):
+        """Réentraîner le modèle en arrière-plan"""
+        await asyncio.sleep(1)  # Éviter le blocage
+        self.train_model(self.training_data)
 
 class PasswordHasher:
     """Gestionnaire de hashage des mots de passe SHA256 + bcrypt"""
