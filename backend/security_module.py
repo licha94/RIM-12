@@ -774,8 +774,194 @@ class CountryBlocker:
         if country_code.upper() in SECURITY_CONFIG["allowed_countries"]:
             return 0.0
         
-        # Autres pays
-        return 0.3
+class MultilingualChatbot:
+    """Chatbot multilingue Phase 7 - FR, EN, AR, ES"""
+    
+    def __init__(self):
+        self.supported_languages = SECURITY_CONFIG["multilingual_support"]
+        self.language_patterns = {
+            "fr": r"(bonjour|salut|bonsoir|au revoir|merci|s'il vous plaît)",
+            "en": r"(hello|hi|good morning|goodbye|thank you|please)",
+            "ar": r"(مرحبا|السلام عليكم|شكرا|من فضلك|مع السلامة)",
+            "es": r"(hola|buenos días|gracias|por favor|adiós)"
+        }
+        self.responses = {
+            "fr": {
+                "greeting": "Bonjour ! Je suis l'assistant RIMAREUM. Comment puis-je vous aider ?",
+                "help": "Je peux vous aider avec vos questions sur RIMAREUM, les produits, le DAO, les NFT et la sécurité.",
+                "security": "Votre sécurité est notre priorité. Tous vos échanges sont protégés par notre système SENTINEL.",
+                "products": "Découvrez nos produits exclusifs : huile d'argan, dattes biologiques, et NFT RIMAR.",
+                "dao": "Le DAO RIMAREUM vous permet de participer à la gouvernance de la plateforme.",
+                "contact": "Pour nous contacter : support@rimareum.com",
+                "error": "Désolé, je n'ai pas compris votre demande. Pouvez-vous reformuler ?",
+                "goodbye": "Au revoir ! N'hésitez pas à revenir si vous avez d'autres questions."
+            },
+            "en": {
+                "greeting": "Hello! I'm the RIMAREUM assistant. How can I help you?",
+                "help": "I can help you with questions about RIMAREUM, products, DAO, NFTs and security.",
+                "security": "Your security is our priority. All your exchanges are protected by our SENTINEL system.",
+                "products": "Discover our exclusive products: argan oil, organic dates, and RIMAR NFTs.",
+                "dao": "The RIMAREUM DAO allows you to participate in platform governance.",
+                "contact": "To contact us: support@rimareum.com",
+                "error": "Sorry, I didn't understand your request. Can you rephrase?",
+                "goodbye": "Goodbye! Feel free to come back if you have other questions."
+            },
+            "ar": {
+                "greeting": "مرحبا! أنا مساعد RIMAREUM. كيف يمكنني مساعدتك؟",
+                "help": "يمكنني مساعدتك في الأسئلة حول RIMAREUM والمنتجات وDAO وNFT والأمان.",
+                "security": "أمانك هو أولويتنا. جميع تبادلاتك محمية بنظام SENTINEL الخاص بنا.",
+                "products": "اكتشف منتجاتنا الحصرية: زيت الأرغان، التمر البيولوجي، ورموز RIMAR غير القابلة للاستبدال.",
+                "dao": "يتيح لك DAO RIMAREUM المشاركة في حوكمة المنصة.",
+                "contact": "للتواصل معنا: support@rimareum.com",
+                "error": "آسف، لم أفهم طلبك. هل يمكنك إعادة الصياغة؟",
+                "goodbye": "وداعا! لا تتردد في العودة إذا كان لديك أسئلة أخرى."
+            },
+            "es": {
+                "greeting": "¡Hola! Soy el asistente RIMAREUM. ¿Cómo puedo ayudarte?",
+                "help": "Puedo ayudarte con preguntas sobre RIMAREUM, productos, DAO, NFTs y seguridad.",
+                "security": "Tu seguridad es nuestra prioridad. Todos tus intercambios están protegidos por nuestro sistema SENTINEL.",
+                "products": "Descubre nuestros productos exclusivos: aceite de argán, dátiles orgánicos y NFTs RIMAR.",
+                "dao": "El DAO RIMAREUM te permite participar en la gobernanza de la plataforma.",
+                "contact": "Para contactarnos: support@rimareum.com",
+                "error": "Lo siento, no entendí tu solicitud. ¿Puedes reformular?",
+                "goodbye": "¡Adiós! No dudes en volver si tienes otras preguntas."
+            }
+        }
+        
+        self.faq_database = {
+            "fr": {
+                "qu'est-ce que rimareum": "RIMAREUM est une plateforme révolutionnaire combinant e-commerce, crypto-monnaies, NFT et gouvernance DAO.",
+                "comment acheter": "Vous pouvez acheter nos produits avec des cartes bancaires ou des crypto-monnaies.",
+                "qu'est-ce que le dao": "Le DAO est notre système de gouvernance décentralisée où les détenteurs de $RIMAR peuvent voter.",
+                "sécurité": "Nous utilisons un système de sécurité multicouche avec IA, WAF et surveillance continue.",
+                "nft": "Nos NFT RIMAR donnent accès à des avantages exclusifs et à la gouvernance."
+            },
+            "en": {
+                "what is rimareum": "RIMAREUM is a revolutionary platform combining e-commerce, cryptocurrencies, NFTs and DAO governance.",
+                "how to buy": "You can purchase our products with bank cards or cryptocurrencies.",
+                "what is dao": "The DAO is our decentralized governance system where $RIMAR holders can vote.",
+                "security": "We use a multi-layer security system with AI, WAF and continuous monitoring.",
+                "nft": "Our RIMAR NFTs provide access to exclusive benefits and governance."
+            },
+            "ar": {
+                "ما هو rimareum": "RIMAREUM هي منصة ثورية تجمع بين التجارة الإلكترونية والعملات المشفرة وNFT وحوكمة DAO.",
+                "كيفية الشراء": "يمكنك شراء منتجاتنا بالبطاقات المصرفية أو العملات المشفرة.",
+                "ما هو dao": "DAO هو نظام الحوكمة اللامركزي حيث يمكن لحاملي $RIMAR التصويت.",
+                "الأمان": "نستخدم نظام أمان متعدد الطبقات مع الذكاء الاصطناعي وWAF ومراقبة مستمرة.",
+                "nft": "تمنح رموز RIMAR NFT الخاصة بنا الوصول إلى المزايا الحصرية والحوكمة."
+            },
+            "es": {
+                "qué es rimareum": "RIMAREUM es una plataforma revolucionaria que combina comercio electrónico, criptomonedas, NFT y gobernanza DAO.",
+                "cómo comprar": "Puedes comprar nuestros productos con tarjetas bancarias o criptomonedas.",
+                "qué es dao": "El DAO es nuestro sistema de gobernanza descentralizada donde los poseedores de $RIMAR pueden votar.",
+                "seguridad": "Usamos un sistema de seguridad multicapa con IA, WAF y monitoreo continuo.",
+                "nft": "Nuestros NFT RIMAR brindan acceso a beneficios exclusivos y gobernanza."
+            }
+        }
+    
+    def detect_language(self, text: str) -> str:
+        """Détecter la langue d'un texte"""
+        text_lower = text.lower()
+        
+        # Compter les matches pour chaque langue
+        language_scores = {}
+        for lang, pattern in self.language_patterns.items():
+            matches = len(re.findall(pattern, text_lower))
+            language_scores[lang] = matches
+        
+        # Retourner la langue avec le plus de matches
+        if language_scores:
+            detected_lang = max(language_scores, key=language_scores.get)
+            if language_scores[detected_lang] > 0:
+                return detected_lang
+        
+        # Langue par défaut
+        return "fr"
+    
+    def get_response(self, message: str, language: str = None) -> Dict[str, str]:
+        """Obtenir une réponse du chatbot"""
+        if language is None:
+            language = self.detect_language(message)
+        
+        if language not in self.supported_languages:
+            language = "fr"  # Fallback
+        
+        message_lower = message.lower()
+        
+        # Recherche dans la FAQ
+        for question, answer in self.faq_database[language].items():
+            if any(word in message_lower for word in question.split()):
+                return {
+                    "message": answer,
+                    "language": language,
+                    "type": "faq"
+                }
+        
+        # Réponses contextuelles
+        if any(word in message_lower for word in ["bonjour", "hello", "مرحبا", "hola"]):
+            return {
+                "message": self.responses[language]["greeting"],
+                "language": language,
+                "type": "greeting"
+            }
+        elif any(word in message_lower for word in ["aide", "help", "مساعدة", "ayuda"]):
+            return {
+                "message": self.responses[language]["help"],
+                "language": language,
+                "type": "help"
+            }
+        elif any(word in message_lower for word in ["sécurité", "security", "أمان", "seguridad"]):
+            return {
+                "message": self.responses[language]["security"],
+                "language": language,
+                "type": "security"
+            }
+        elif any(word in message_lower for word in ["produit", "product", "منتج", "producto"]):
+            return {
+                "message": self.responses[language]["products"],
+                "language": language,
+                "type": "products"
+            }
+        elif any(word in message_lower for word in ["dao", "gouvernance", "governance", "حوكمة", "gobernanza"]):
+            return {
+                "message": self.responses[language]["dao"],
+                "language": language,
+                "type": "dao"
+            }
+        elif any(word in message_lower for word in ["contact", "تواصل", "contacto"]):
+            return {
+                "message": self.responses[language]["contact"],
+                "language": language,
+                "type": "contact"
+            }
+        elif any(word in message_lower for word in ["au revoir", "goodbye", "مع السلامة", "adiós"]):
+            return {
+                "message": self.responses[language]["goodbye"],
+                "language": language,
+                "type": "goodbye"
+            }
+        else:
+            return {
+                "message": self.responses[language]["error"],
+                "language": language,
+                "type": "error"
+            }
+    
+    def get_supported_languages(self) -> List[str]:
+        """Obtenir les langues supportées"""
+        return self.supported_languages.copy()
+    
+    def add_faq(self, question: str, answer: str, language: str):
+        """Ajouter une entrée FAQ"""
+        if language in self.faq_database:
+            self.faq_database[language][question.lower()] = answer
+    
+    def get_stats(self) -> Dict[str, int]:
+        """Obtenir les statistiques du chatbot"""
+        stats = {}
+        for lang in self.supported_languages:
+            stats[lang] = len(self.faq_database.get(lang, {}))
+        return stats
     def hash_password(password: str) -> str:
         """Hasher un mot de passe avec SHA256 + bcrypt"""
         # Première étape: SHA256
