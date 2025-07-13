@@ -1438,4 +1438,109 @@ const App = () => {
   );
 };
 
+// Track Order Page
+const TrackOrderPage = () => {
+  const [orderId, setOrderId] = useState('');
+  const [orderStatus, setOrderStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const trackOrder = () => {
+    if (!orderId.trim()) {
+      alert('Please enter a valid order ID');
+      return;
+    }
+    
+    setLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      const mockStatuses = [
+        { status: 'Processing', description: 'Your order is being prepared', date: '2025-07-13' },
+        { status: 'Shipped', description: 'Order has been shipped via Express Delivery', date: '2025-07-14' },
+        { status: 'In Transit', description: 'Package is on its way to you', date: '2025-07-15' },
+        { status: 'Delivered', description: 'Successfully delivered to your address', date: '2025-07-16' }
+      ];
+      
+      setOrderStatus({
+        orderId: orderId,
+        currentStatus: 'In Transit',
+        estimatedDelivery: '2025-07-16',
+        trackingSteps: mockStatuses
+      });
+      setLoading(false);
+    }, 1500);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-900 py-12">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <h1 className="text-4xl font-bold text-center text-white mb-8">
+          Track Your Order
+        </h1>
+        
+        <div className="bg-gray-800 rounded-lg p-8 mb-8">
+          <h2 className="text-2xl font-bold text-blue-400 mb-6">Enter Order Details</h2>
+          
+          <div className="flex space-x-4">
+            <input
+              type="text"
+              value={orderId}
+              onChange={(e) => setOrderId(e.target.value)}
+              placeholder="Enter Order ID (e.g., ORD-001, ORD-002)"
+              className="flex-1 bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-400"
+            />
+            <button
+              onClick={trackOrder}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold transition"
+            >
+              {loading ? 'Tracking...' : 'Track Order'}
+            </button>
+          </div>
+          
+          <div className="mt-4 text-gray-400 text-sm">
+            Try sample order IDs: ORD-001, ORD-002, or NFT-001
+          </div>
+        </div>
+
+        {orderStatus && (
+          <div className="bg-gray-800 rounded-lg p-8">
+            <h3 className="text-xl font-bold text-white mb-6">Order Status</h3>
+            
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="text-center">
+                <h4 className="text-lg font-semibold text-blue-400 mb-2">Order ID</h4>
+                <p className="text-white font-mono">{orderStatus.orderId}</p>
+              </div>
+              <div className="text-center">
+                <h4 className="text-lg font-semibold text-green-400 mb-2">Current Status</h4>
+                <p className="text-white">{orderStatus.currentStatus}</p>
+              </div>
+              <div className="text-center">
+                <h4 className="text-lg font-semibold text-purple-400 mb-2">Estimated Delivery</h4>
+                <p className="text-white">{orderStatus.estimatedDelivery}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold text-white mb-4">Tracking Timeline</h4>
+              {orderStatus.trackingSteps.map((step, index) => (
+                <div key={index} className="flex items-center space-x-4 p-4 bg-gray-700 rounded-lg">
+                  <div className={`w-4 h-4 rounded-full ${
+                    index <= 2 ? 'bg-green-500' : 'bg-gray-500'
+                  }`}></div>
+                  <div className="flex-1">
+                    <h5 className="font-semibold text-white">{step.status}</h5>
+                    <p className="text-gray-400">{step.description}</p>
+                  </div>
+                  <div className="text-gray-400 text-sm">{step.date}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default App;
