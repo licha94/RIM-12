@@ -1237,8 +1237,564 @@ continuous_monitor = ContinuousMonitor()
 ml_detector.load_model()
 
 # Démarrer la surveillance continue
-if SECURITY_CONFIG["continuous_monitoring"]:
-    asyncio.create_task(continuous_monitor.start_monitoring())
+class EnhancedWAF:
+    """Web Application Firewall Phase 7 avec ML et surveillance continue"""
+    
+    def __init__(self):
+        self.blocked_ips: Set[str] = set()
+        self.audit_logger = SecurityAuditLogger()
+        self.country_blocker = CountryBlocker()
+        self.ml_detector = ml_detector
+        self.gpt_assistant = gpt_assistant
+        self.continuous_monitor = continuous_monitor
+        self.maintenance_mode = SECURITY_CONFIG["maintenance_mode"]
+        self.request_counts = defaultdict(list)
+        self.failed_auth_attempts = defaultdict(int)
+        self.honeypot_hits = defaultdict(int)
+        self.threat_intelligence = ThreatIntelligence()
+        self.behavioral_baselines = {}
+        self.adaptive_thresholds = {}
+        self.prediction_cache = {}
+        self.session_tracking = {}
+        self.anomaly_scores = defaultdict(list)
+        self.threat_patterns = defaultdict(int)
+        self.evasion_attempts = defaultdict(int)
+        self.advanced_threats = []
+        self.zero_day_signatures = []
+        self.hunt_mode_active = SECURITY_CONFIG["threat_hunting_mode"]
+        
+        # Initialiser les seuils adaptatifs
+        self._initialize_adaptive_thresholds()
+    
+    def _initialize_adaptive_thresholds(self):
+        """Initialiser les seuils adaptatifs"""
+        base_thresholds = {
+            "rate_limit": SECURITY_CONFIG["max_requests_per_minute"],
+            "anomaly_detection": SECURITY_CONFIG["anomaly_detection_sensitivity"],
+            "ml_threat": SECURITY_CONFIG["ml_threat_threshold"],
+            "gpt_analysis": SECURITY_CONFIG["gpt_analysis_threshold"]
+        }
+        
+        for endpoint in ["/api/products", "/api/chat", "/api/auth", "/api/payments"]:
+            self.adaptive_thresholds[endpoint] = base_thresholds.copy()
+    
+    async def process_request(self, request: Request) -> Dict:
+        """Traitement avancé des requêtes Phase 7"""
+        start_time = time.time()
+        client_ip = self._get_client_ip(request)
+        user_agent = request.headers.get("user-agent", "")
+        
+        try:
+            # Vérifications de base
+            if await self._basic_checks(client_ip, request):
+                return await self._create_block_response(client_ip, "basic_check_failed")
+            
+            # Analyse ML en temps réel
+            ml_result = await self._ml_analysis(request, client_ip)
+            
+            # Analyse comportementale
+            behavioral_result = await self._behavioral_analysis(request, client_ip)
+            
+            # Détection d'évasion avancée
+            evasion_result = await self._advanced_evasion_detection(request, client_ip)
+            
+            # Détection zéro-day
+            zero_day_result = await self._zero_day_detection(request, client_ip)
+            
+            # Analyse prédictive
+            prediction_result = await self._predictive_analysis(request, client_ip)
+            
+            # Calcul du score de menace global
+            threat_score = await self._calculate_global_threat_score(
+                ml_result, behavioral_result, evasion_result, 
+                zero_day_result, prediction_result
+            )
+            
+            # Décision de blocage
+            should_block = await self._make_blocking_decision(threat_score, request, client_ip)
+            
+            # Réponse immédiate si nécessaire
+            if should_block and self.continuous_monitor.reactive_mode:
+                await self._immediate_threat_response(request, client_ip, threat_score)
+            
+            # Analyse GPT-4 pour les menaces élevées
+            gpt_analysis = None
+            if threat_score > SECURITY_CONFIG["gpt_analysis_threshold"]:
+                gpt_analysis = await self._gpt_threat_analysis(request, client_ip, threat_score)
+            
+            # Logging avancé
+            await self._advanced_logging(request, client_ip, user_agent, threat_score, gpt_analysis)
+            
+            # Mise à jour des modèles d'apprentissage
+            await self._update_learning_models(request, client_ip, threat_score)
+            
+            # Mise à jour des métriques de performance
+            processing_time = time.time() - start_time
+            await self._update_performance_metrics(processing_time)
+            
+            return await self._create_response(client_ip, threat_score, should_block, gpt_analysis)
+            
+        except Exception as e:
+            logging.error(f"Erreur traitement WAF: {e}")
+            return await self._create_error_response(client_ip, str(e))
+    
+    async def _basic_checks(self, client_ip: str, request: Request) -> bool:
+        """Vérifications de base"""
+        # Mode maintenance
+        if self.maintenance_mode:
+            return True
+        
+        # IP bloquée
+        if client_ip in self.blocked_ips:
+            return True
+        
+        # Vérification géographique
+        if not await self.country_blocker.is_country_allowed(client_ip):
+            await self._block_ip_with_reason(client_ip, "geo_blocked")
+            return True
+        
+        # Honeypot
+        if await self._check_honeypot(request):
+            await self._block_ip_with_reason(client_ip, "honeypot_hit")
+            return True
+        
+        return False
+    
+    async def _ml_analysis(self, request: Request, client_ip: str) -> Dict:
+        """Analyse ML de la requête"""
+        try:
+            # Contexte pour l'extraction de features
+            context = await self._build_request_context(request, client_ip)
+            
+            # Extraction des features
+            features = self.ml_detector.extract_features(request, client_ip, context)
+            
+            # Prédiction
+            threat_score, threat_level = self.ml_detector.predict_threat(features)
+            
+            return {
+                "threat_score": threat_score,
+                "threat_level": threat_level,
+                "features": features.tolist() if hasattr(features, 'tolist') else [],
+                "model_version": self.ml_detector.model_version
+            }
+            
+        except Exception as e:
+            logging.error(f"Erreur analyse ML: {e}")
+            return {"threat_score": 0.0, "threat_level": "unknown", "error": str(e)}
+    
+    async def _behavioral_analysis(self, request: Request, client_ip: str) -> Dict:
+        """Analyse comportementale avancée"""
+        try:
+            # Tracker la session
+            session_id = request.headers.get("session-id") or request.cookies.get("session")
+            
+            # Analyser les patterns de comportement
+            behavior_score = await self._analyze_behavior_patterns(client_ip, session_id, request)
+            
+            # Détection d'anomalies de session
+            session_anomaly = await self._detect_session_anomalies(session_id, request)
+            
+            # Analyse de credential stuffing
+            credential_stuffing = await self._detect_credential_stuffing(client_ip, request)
+            
+            return {
+                "behavior_score": behavior_score,
+                "session_anomaly": session_anomaly,
+                "credential_stuffing": credential_stuffing
+            }
+            
+        except Exception as e:
+            logging.error(f"Erreur analyse comportementale: {e}")
+            return {"behavior_score": 0.0, "session_anomaly": False, "credential_stuffing": False}
+    
+    async def _advanced_evasion_detection(self, request: Request, client_ip: str) -> Dict:
+        """Détection d'évasion avancée"""
+        try:
+            evasion_score = 0.0
+            techniques = []
+            
+            # Détection d'obfuscation
+            if await self._detect_obfuscation(request):
+                evasion_score += 0.3
+                techniques.append("obfuscation")
+            
+            # Détection de fragmentation
+            if await self._detect_fragmentation(request):
+                evasion_score += 0.2
+                techniques.append("fragmentation")
+            
+            # Détection d'encodage multiple
+            if await self._detect_multiple_encoding(request):
+                evasion_score += 0.4
+                techniques.append("multiple_encoding")
+            
+            # Détection de polymorphisme
+            if await self._detect_polymorphism(request):
+                evasion_score += 0.5
+                techniques.append("polymorphism")
+            
+            return {
+                "evasion_score": min(evasion_score, 1.0),
+                "techniques": techniques
+            }
+            
+        except Exception as e:
+            logging.error(f"Erreur détection évasion: {e}")
+            return {"evasion_score": 0.0, "techniques": []}
+    
+    async def _zero_day_detection(self, request: Request, client_ip: str) -> Dict:
+        """Détection de vulnérabilités zero-day"""
+        try:
+            zero_day_score = 0.0
+            indicators = []
+            
+            # Analyse des patterns inconnus
+            unknown_patterns = await self._analyze_unknown_patterns(request)
+            if unknown_patterns:
+                zero_day_score += 0.4
+                indicators.append("unknown_patterns")
+            
+            # Détection de techniques émergentes
+            emerging_techniques = await self._detect_emerging_techniques(request)
+            if emerging_techniques:
+                zero_day_score += 0.6
+                indicators.append("emerging_techniques")
+            
+            # Analyse heuristique
+            heuristic_score = await self._heuristic_analysis(request)
+            zero_day_score += heuristic_score
+            
+            return {
+                "zero_day_score": min(zero_day_score, 1.0),
+                "indicators": indicators,
+                "heuristic_score": heuristic_score
+            }
+            
+        except Exception as e:
+            logging.error(f"Erreur détection zero-day: {e}")
+            return {"zero_day_score": 0.0, "indicators": [], "heuristic_score": 0.0}
+    
+    async def _predictive_analysis(self, request: Request, client_ip: str) -> Dict:
+        """Analyse prédictive des menaces"""
+        try:
+            # Prédiction basée sur l'historique
+            historical_prediction = await self._predict_from_history(client_ip)
+            
+            # Prédiction basée sur les tendances
+            trend_prediction = await self._predict_from_trends(request)
+            
+            # Prédiction basée sur l'intelligence des menaces
+            threat_intel_prediction = await self._predict_from_threat_intel(client_ip)
+            
+            return {
+                "historical_prediction": historical_prediction,
+                "trend_prediction": trend_prediction,
+                "threat_intel_prediction": threat_intel_prediction
+            }
+            
+        except Exception as e:
+            logging.error(f"Erreur analyse prédictive: {e}")
+            return {"historical_prediction": 0.0, "trend_prediction": 0.0, "threat_intel_prediction": 0.0}
+    
+    async def _calculate_global_threat_score(self, ml_result: Dict, behavioral_result: Dict, 
+                                           evasion_result: Dict, zero_day_result: Dict, 
+                                           prediction_result: Dict) -> float:
+        """Calculer le score de menace global"""
+        try:
+            # Pondération des différents scores
+            weights = {
+                "ml": 0.3,
+                "behavioral": 0.25,
+                "evasion": 0.2,
+                "zero_day": 0.15,
+                "prediction": 0.1
+            }
+            
+            # Calcul du score pondéré
+            total_score = (
+                ml_result.get("threat_score", 0.0) * weights["ml"] +
+                behavioral_result.get("behavior_score", 0.0) * weights["behavioral"] +
+                evasion_result.get("evasion_score", 0.0) * weights["evasion"] +
+                zero_day_result.get("zero_day_score", 0.0) * weights["zero_day"] +
+                max(prediction_result.get("historical_prediction", 0.0),
+                    prediction_result.get("trend_prediction", 0.0),
+                    prediction_result.get("threat_intel_prediction", 0.0)) * weights["prediction"]
+            )
+            
+            return min(total_score, 1.0)
+            
+        except Exception as e:
+            logging.error(f"Erreur calcul score global: {e}")
+            return 0.0
+    
+    async def _make_blocking_decision(self, threat_score: float, request: Request, client_ip: str) -> bool:
+        """Décision de blocage intelligente"""
+        try:
+            # Seuil adaptatif basé sur l'endpoint
+            endpoint = request.url.path
+            adaptive_threshold = self.adaptive_thresholds.get(endpoint, {}).get("ml_threat", 0.7)
+            
+            # Décision de base
+            if threat_score > adaptive_threshold:
+                return True
+            
+            # Considérations contextuelles
+            if await self._should_block_context(request, client_ip, threat_score):
+                return True
+            
+            # Mode chasse aux menaces
+            if self.hunt_mode_active and threat_score > 0.3:
+                return await self._hunt_mode_decision(request, client_ip, threat_score)
+            
+            return False
+            
+        except Exception as e:
+            logging.error(f"Erreur décision blocage: {e}")
+            return threat_score > 0.8  # Fallback
+    
+    # Méthodes d'assistance (stubs pour les fonctions complexes)
+    async def _build_request_context(self, request: Request, client_ip: str) -> Dict:
+        """Construire le contexte de la requête"""
+        return {
+            "request_rate": len(self.request_counts.get(client_ip, [])),
+            "geo_risk_score": await self.country_blocker.get_geo_risk_score(client_ip),
+            "reputation_score": self.threat_intelligence.ip_reputation.get(client_ip, 0.0),
+            "request_interval": 0.0  # Calculer l'intervalle entre requêtes
+        }
+    
+    async def _analyze_behavior_patterns(self, client_ip: str, session_id: str, request: Request) -> float:
+        """Analyser les patterns de comportement"""
+        return 0.0  # Implémentation simplifiée
+    
+    async def _detect_session_anomalies(self, session_id: str, request: Request) -> bool:
+        """Détecter les anomalies de session"""
+        return False  # Implémentation simplifiée
+    
+    async def _detect_credential_stuffing(self, client_ip: str, request: Request) -> bool:
+        """Détecter le credential stuffing"""
+        return False  # Implémentation simplifiée
+    
+    async def _detect_obfuscation(self, request: Request) -> bool:
+        """Détecter l'obfuscation"""
+        return False  # Implémentation simplifiée
+    
+    async def _detect_fragmentation(self, request: Request) -> bool:
+        """Détecter la fragmentation"""
+        return False  # Implémentation simplifiée
+    
+    async def _detect_multiple_encoding(self, request: Request) -> bool:
+        """Détecter l'encodage multiple"""
+        return False  # Implémentation simplifiée
+    
+    async def _detect_polymorphism(self, request: Request) -> bool:
+        """Détecter le polymorphisme"""
+        return False  # Implémentation simplifiée
+    
+    async def _analyze_unknown_patterns(self, request: Request) -> bool:
+        """Analyser les patterns inconnus"""
+        return False  # Implémentation simplifiée
+    
+    async def _detect_emerging_techniques(self, request: Request) -> bool:
+        """Détecter les techniques émergentes"""
+        return False  # Implémentation simplifiée
+    
+    async def _heuristic_analysis(self, request: Request) -> float:
+        """Analyse heuristique"""
+        return 0.0  # Implémentation simplifiée
+    
+    async def _predict_from_history(self, client_ip: str) -> float:
+        """Prédiction basée sur l'historique"""
+        return 0.0  # Implémentation simplifiée
+    
+    async def _predict_from_trends(self, request: Request) -> float:
+        """Prédiction basée sur les tendances"""
+        return 0.0  # Implémentation simplifiée
+    
+    async def _predict_from_threat_intel(self, client_ip: str) -> float:
+        """Prédiction basée sur l'intelligence des menaces"""
+        return 0.0  # Implémentation simplifiée
+    
+    async def _should_block_context(self, request: Request, client_ip: str, threat_score: float) -> bool:
+        """Décision contextuelle de blocage"""
+        return False  # Implémentation simplifiée
+    
+    async def _hunt_mode_decision(self, request: Request, client_ip: str, threat_score: float) -> bool:
+        """Décision en mode chasse aux menaces"""
+        return threat_score > 0.5  # Implémentation simplifiée
+    
+    async def _immediate_threat_response(self, request: Request, client_ip: str, threat_score: float):
+        """Réponse immédiate aux menaces"""
+        threat_event = {
+            "type": "HIGH_THREAT",
+            "ip_address": client_ip,
+            "threat_score": threat_score,
+            "timestamp": datetime.utcnow().isoformat(),
+            "severity": "high" if threat_score > 0.8 else "medium"
+        }
+        
+        await self.continuous_monitor.add_threat_to_queue(threat_event)
+    
+    async def _gpt_threat_analysis(self, request: Request, client_ip: str, threat_score: float) -> Dict:
+        """Analyse GPT-4 des menaces"""
+        try:
+            security_event = SecurityEvent(
+                timestamp=datetime.utcnow(),
+                ip_address=client_ip,
+                user_agent=request.headers.get("user-agent", ""),
+                request_path=request.url.path,
+                method=request.method,
+                threat_type="ML_DETECTED",
+                severity="HIGH",
+                blocked=True,
+                details={"threat_score": threat_score},
+                ml_score=threat_score
+            )
+            
+            return await self.gpt_assistant.analyze_threat(security_event)
+            
+        except Exception as e:
+            logging.error(f"Erreur analyse GPT: {e}")
+            return {"analysis": f"Erreur GPT: {str(e)}"}
+    
+    async def _advanced_logging(self, request: Request, client_ip: str, user_agent: str, 
+                               threat_score: float, gpt_analysis: Dict):
+        """Logging avancé"""
+        try:
+            security_event = SecurityEvent(
+                timestamp=datetime.utcnow(),
+                ip_address=client_ip,
+                user_agent=user_agent,
+                request_path=request.url.path,
+                method=request.method,
+                threat_type="WAF_ANALYSIS",
+                severity="HIGH" if threat_score > 0.8 else "MEDIUM" if threat_score > 0.5 else "LOW",
+                blocked=threat_score > 0.7,
+                details={"threat_score": threat_score, "gpt_analysis": gpt_analysis},
+                ml_score=threat_score,
+                gpt_analysis=gpt_analysis.get("analysis", "") if gpt_analysis else None
+            )
+            
+            await self.audit_logger.log_event(security_event)
+            
+        except Exception as e:
+            logging.error(f"Erreur logging avancé: {e}")
+    
+    async def _update_learning_models(self, request: Request, client_ip: str, threat_score: float):
+        """Mettre à jour les modèles d'apprentissage"""
+        try:
+            # Données pour l'apprentissage ML
+            training_data = {
+                "request_rate": len(self.request_counts.get(client_ip, [])),
+                "payload_size": len(str(request.body) if hasattr(request, 'body') else ''),
+                "url_length": len(str(request.url)),
+                "param_count": len(request.query_params),
+                "header_count": len(request.headers),
+                "user_agent_entropy": 0.0,  # Calculer l'entropie
+                "path_depth": str(request.url.path).count('/'),
+                "suspicious_patterns": 0,  # Compter les patterns suspects
+                "geo_risk_score": await self.country_blocker.get_geo_risk_score(client_ip),
+                "reputation_score": self.threat_intelligence.ip_reputation.get(client_ip, 0.0),
+                "time_of_day": datetime.utcnow().hour,
+                "request_interval": 0.0,
+                "threat_score": threat_score
+            }
+            
+            self.ml_detector.update_training_data(training_data)
+            
+        except Exception as e:
+            logging.error(f"Erreur mise à jour modèles: {e}")
+    
+    async def _update_performance_metrics(self, processing_time: float):
+        """Mettre à jour les métriques de performance"""
+        try:
+            current_metrics = self.continuous_monitor.performance_metrics
+            
+            # Mettre à jour le temps de réponse moyen
+            if current_metrics["average_response_time"] == 0:
+                current_metrics["average_response_time"] = processing_time
+            else:
+                current_metrics["average_response_time"] = (
+                    current_metrics["average_response_time"] * 0.9 + processing_time * 0.1
+                )
+            
+            # Mettre à jour le pic de temps de réponse
+            if processing_time > current_metrics["peak_response_time"]:
+                current_metrics["peak_response_time"] = processing_time
+            
+            # Incrémenter le throughput
+            current_metrics["throughput"] = current_metrics.get("throughput", 0) + 1
+            
+        except Exception as e:
+            logging.error(f"Erreur métriques performance: {e}")
+    
+    async def _create_response(self, client_ip: str, threat_score: float, should_block: bool, 
+                              gpt_analysis: Dict) -> Dict:
+        """Créer la réponse WAF"""
+        return {
+            "allowed": not should_block,
+            "threat_score": threat_score,
+            "ip": client_ip,
+            "phase": "7_SENTINEL_CORE",
+            "gpt_analysis": gpt_analysis,
+            "reasons": ["Threat score too high"] if should_block else [],
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    
+    async def _create_block_response(self, client_ip: str, reason: str) -> Dict:
+        """Créer une réponse de blocage"""
+        return {
+            "allowed": False,
+            "threat_score": 1.0,
+            "ip": client_ip,
+            "phase": "7_SENTINEL_CORE",
+            "reasons": [reason],
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    
+    async def _create_error_response(self, client_ip: str, error: str) -> Dict:
+        """Créer une réponse d'erreur"""
+        return {
+            "allowed": True,  # Permettre en cas d'erreur
+            "threat_score": 0.0,
+            "ip": client_ip,
+            "phase": "7_SENTINEL_CORE",
+            "error": error,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    
+    async def _block_ip_with_reason(self, client_ip: str, reason: str):
+        """Bloquer une IP avec raison"""
+        self.blocked_ips.add(client_ip)
+        logging.warning(f"IP {client_ip} bloquée: {reason}")
+    
+    async def _check_honeypot(self, request: Request) -> bool:
+        """Vérifier si la requête touche un honeypot"""
+        for honeypot in SECURITY_CONFIG["honeypot_endpoints"]:
+            if honeypot in request.url.path:
+                return True
+        return False
+    
+    def _get_client_ip(self, request: Request) -> str:
+        """Obtenir l'IP réelle du client"""
+        # Vérifier les headers de proxy
+        forwarded_for = request.headers.get("x-forwarded-for")
+        if forwarded_for:
+            return forwarded_for.split(",")[0].strip()
+        
+        real_ip = request.headers.get("x-real-ip")
+        if real_ip:
+            return real_ip
+        
+        return request.client.host if request.client else "unknown"
+
+# Instance globale WAF Phase 7
+waf_instance = EnhancedWAF()
+
+# Garder l'ancienne instance pour compatibilité
+class WAF(EnhancedWAF):
+    """Alias pour compatibilité"""
+    pass
     def hash_password(password: str) -> str:
         """Hasher un mot de passe avec SHA256 + bcrypt"""
         # Première étape: SHA256
