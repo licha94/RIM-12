@@ -715,9 +715,67 @@ class PasswordHasher:
             return bcrypt.checkpw(sha256_hash.encode(), hashed_password.encode())
         except Exception:
             return False
-    """Gestionnaire de hashage des mots de passe SHA256 + bcrypt"""
+
+class CountryBlocker:
+    """Système de blocage géographique Phase 7"""
     
-    @staticmethod
+    def __init__(self):
+        self.ip_cache = {}
+        self.cache_expiry = 3600  # 1 heure
+        self.threat_intel = ThreatIntelligence()
+    
+    async def get_country_code(self, ip: str) -> Optional[str]:
+        """Obtenir le code pays d'une IP via ipapi.co"""
+        if ip in self.ip_cache:
+            cached_data = self.ip_cache[ip]
+            if time.time() - cached_data["timestamp"] < self.cache_expiry:
+                return cached_data["country"]
+        
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(f"https://ipapi.co/{ip}/country/")
+                if response.status_code == 200:
+                    country_code = response.text.strip()
+                    
+                    # Mettre en cache
+                    self.ip_cache[ip] = {
+                        "country": country_code,
+                        "timestamp": time.time()
+                    }
+                    
+                    return country_code
+        except Exception as e:
+            logging.error(f"Erreur géolocalisation IP {ip}: {e}")
+        
+        return None
+    
+    async def is_country_allowed(self, ip: str) -> bool:
+        """Vérifier si le pays est autorisé"""
+        if not SECURITY_CONFIG["allowed_countries"]:
+            return True
+        
+        country_code = await self.get_country_code(ip)
+        if not country_code:
+            return True  # Autoriser si impossible de déterminer
+        
+        return country_code.upper() in SECURITY_CONFIG["allowed_countries"]
+    
+    async def get_geo_risk_score(self, ip: str) -> float:
+        """Calculer le score de risque géographique"""
+        country_code = await self.get_country_code(ip)
+        if not country_code:
+            return 0.0
+        
+        # Pays à haut risque
+        if country_code.upper() in SECURITY_CONFIG["high_risk_countries"]:
+            return 0.9
+        
+        # Pays autorisés
+        if country_code.upper() in SECURITY_CONFIG["allowed_countries"]:
+            return 0.0
+        
+        # Autres pays
+        return 0.3
     def hash_password(password: str) -> str:
         """Hasher un mot de passe avec SHA256 + bcrypt"""
         # Première étape: SHA256
