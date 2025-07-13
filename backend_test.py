@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 
 # Backend URL from environment
-BACKEND_URL = "https://20423e44-cefc-4fee-92df-010802a91699.preview.emergentagent.com/api"
+BACKEND_URL = "https://916031a1-e73a-4d5a-bc93-d4b139a89043.preview.emergentagent.com/api"
 
 class RimareumAPITester:
     def __init__(self):
