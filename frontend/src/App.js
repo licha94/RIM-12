@@ -1556,7 +1556,164 @@ const Footer = () => {
   );
 };
 
-// Composant Principal App
+// Composant Chat AI Flottant
+const FloatingAIChat = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { role: "assistant", content: "🤖 Salut ! Je suis l'IA RIMAREUM. Comment puis-je t'aider ?" }
+  ]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sessionId] = useState(() => Math.random().toString(36).substr(2, 9));
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim()) return;
+
+    const userMessage = { role: "user", content: inputMessage };
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage("");
+    setLoading(true);
+
+    try {
+      const response = await axios.post(`${API}/chat/message`, {
+        session_id: sessionId,
+        message: inputMessage
+      });
+
+      const aiMessage = { role: "assistant", content: response.data.response };
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Erreur de chat:", error);
+      const errorMessage = { 
+        role: "assistant", 
+        content: "⚡ Mode simulation activé ! Pose-moi des questions sur RIMAREUM, crypto, NFT ou DAO !" 
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50">
+      {/* Bouton Chat Flottant */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-16 h-16 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 flex items-center justify-center group animate-pulse"
+          style={{
+            boxShadow: '0 0 20px rgba(0, 240, 255, 0.5)',
+            border: '2px solid rgba(0, 240, 255, 0.3)'
+          }}
+        >
+          <span className="text-2xl">🤖</span>
+          <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-400 rounded-full animate-ping"></div>
+        </button>
+      )}
+
+      {/* Interface Chat */}
+      {isOpen && (
+        <div 
+          className="w-96 h-96 bg-black/90 backdrop-blur-lg rounded-lg shadow-2xl border border-cyan-500/50"
+          style={{
+            fontFamily: "'Orbitron', 'Inter', sans-serif",
+            boxShadow: '0 0 30px rgba(0, 240, 255, 0.3)'
+          }}
+        >
+          {/* Header Chat */}
+          <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 rounded-t-lg flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <span className="text-xl">🤖</span>
+              <span className="font-bold text-white">RIMAREUM AI</span>
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-white hover:text-red-400 transition text-xl"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="h-64 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-cyan-500 scrollbar-track-gray-800">
+            {messages.map((msg, index) => (
+              <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div 
+                  className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
+                    msg.role === 'user' 
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' 
+                      : 'bg-gray-800 text-cyan-400 border border-cyan-500/30'
+                  }`}
+                  style={{
+                    textShadow: msg.role === 'assistant' ? '0 0 10px rgba(0, 240, 255, 0.5)' : 'none'
+                  }}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-800 text-cyan-400 border border-cyan-500/30 px-3 py-2 rounded-lg">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Input */}
+          <div className="p-4 border-t border-cyan-500/30">
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                placeholder="Pose ta question à RIMAREUM..."
+                className="flex-1 bg-gray-800 text-cyan-400 px-3 py-2 rounded border border-cyan-500/30 focus:outline-none focus:border-cyan-400 placeholder-gray-500"
+                style={{
+                  textShadow: '0 0 5px rgba(0, 240, 255, 0.3)'
+                }}
+                disabled={loading}
+              />
+              <button
+                onClick={sendMessage}
+                disabled={loading || !inputMessage.trim()}
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:from-gray-600 disabled:to-gray-700 text-black font-bold px-4 py-2 rounded transition-all duration-300"
+                style={{
+                  boxShadow: '0 0 10px rgba(0, 240, 255, 0.3)'
+                }}
+              >
+                ⚡
+              </button>
+            </div>
+            
+            {/* Suggestions rapides */}
+            <div className="mt-2 flex flex-wrap gap-1">
+              {["💰 Produits", "🎨 NFT", "🗳️ DAO", "💎 Crypto"].map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => setInputMessage(suggestion.split(' ')[1] === 'Produits' ? 'Quels sont vos produits ?' : 
+                                                  suggestion.split(' ')[1] === 'NFT' ? 'Comment créer des NFT ?' :
+                                                  suggestion.split(' ')[1] === 'DAO' ? 'Comment voter dans la DAO ?' :
+                                                  'Options de paiement crypto')}
+                  className="px-2 py-1 text-xs bg-gray-800 text-cyan-400 rounded border border-cyan-500/30 hover:bg-cyan-900 transition"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 const App = () => {
   const wallet = useWallet();
   const [currentPage, setCurrentPage] = useState('home');
