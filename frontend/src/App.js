@@ -84,7 +84,8 @@ const Header = () => {
     { id: 'account', label: 'My Account' },
     { id: 'about', label: 'About Us' },
     { id: 'contact', label: 'Contact' },
-    { id: 'legal', label: 'Legal' }
+    { id: 'legal', label: 'Legal' },
+    { id: 'track', label: 'Track Order' }
   ];
 
   return (
