@@ -32,3 +32,6 @@ joblib>=1.5.1
 scipy>=1.16.0
 qrcode[pil]>=8.2
 pillow>=11.3.0
+reportlab>=4.4.2
+weasyprint>=65.1
+faker>=37.4.0
