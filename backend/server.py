@@ -23,13 +23,19 @@ import json
 import base64
 import bcrypt
 
-# Import du module de sécurité
+# Import du module de sécurité PHASE 6
 try:
-    from .security_module import get_security_check, waf_instance
+    from .security_module import (
+        get_security_check, waf_instance, limiter, oauth2_scheme,
+        PasswordHasher, api_key_manager, audit_scheduler
+    )
 except ImportError:
     # Fallback si le module n'est pas trouvé
     async def get_security_check(request: Request):
         return {"allowed": True, "risk_score": 0.0}
+    
+    limiter = None
+    oauth2_scheme = None
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
