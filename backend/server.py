@@ -578,10 +578,13 @@ async def trigger_ml_training(
     """Déclencher l'entraînement du modèle ML (admin uniquement)"""
     try:
         if not ml_detector:
-            raise HTTPException(
-                status_code=503,
-                detail="ML detector not available"
-            )
+            return {
+                "training_triggered": False,
+                "training_success": False,
+                "message": "ML detector not available in fallback mode",
+                "data_size": 0,
+                "timestamp": datetime.utcnow().isoformat()
+            }
         
         # Entraîner le modèle en arrière-plan
         training_result = ml_detector.train_model(ml_detector.training_data)
