@@ -1966,6 +1966,21 @@ class RimareumAPITester:
         self.test_integration_with_existing_systems()
         self.test_error_handling_edge_cases()
         
+        # PHASE 9 PAYCORE TESTS
+        print("🚀 PHASE 9 PAYCORE PRODUCTION-READY TESTS")
+        print("-" * 40)
+        self.test_paycore_status_endpoint()
+        self.test_enhanced_demo_products()
+        self.test_phase9_product_metadata()
+        self.test_enhanced_qr_codes_phase9()
+        self.test_production_payment_systems()
+        self.test_external_shop_synchronization()
+        self.test_enhanced_security_module()
+        self.test_commerce_backoffice()
+        self.test_realtime_alerts_system()
+        self.test_ai_customer_tracking()
+        self.test_phase9_compatibility_check()
+        
         # Product Management Tests (Legacy)
         print("🛍️ LEGACY PRODUCT MANAGEMENT TESTS")
         print("-" * 30)
