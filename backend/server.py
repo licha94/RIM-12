@@ -756,20 +756,20 @@ async def create_subscription(subscription_data: Dict[str, Any]):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-# Error handlers
-@api_router.exception_handler(404)
-async def not_found_handler(request: Request, exc: HTTPException):
-    return JSONResponse(
-        status_code=404,
-        content={"detail": "Endpoint not found", "path": str(request.url.path)}
-    )
+# Error handlers (duplicate - removing)
+# @app.exception_handler(404)
+# async def not_found_handler(request: Request, exc: HTTPException):
+#     return JSONResponse(
+#         status_code=404,
+#         content={"detail": "Endpoint not found", "path": str(request.url.path)}
+#     )
 
-@api_router.exception_handler(500)
-async def internal_error_handler(request: Request, exc: Exception):
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error", "error": str(exc)}
-    )
+# @app.exception_handler(500)
+# async def internal_error_handler(request: Request, exc: Exception):
+#     return JSONResponse(
+#         status_code=500,
+#         content={"detail": "Internal server error", "error": str(exc)}
+#     )
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)
