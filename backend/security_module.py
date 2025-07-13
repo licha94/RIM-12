@@ -318,16 +318,20 @@ class SecurityAuditLogger:
         print(alert_message)  # Console pour le moment
 
 class WAF:
-    """Web Application Firewall intelligent"""
+    """Web Application Firewall intelligent PHASE 6"""
     
     def __init__(self):
         self.blocked_ips: Set[str] = set()
         self.audit_logger = SecurityAuditLogger()
+        self.country_blocker = CountryBlocker()
+        self.guardian_ai = RimareumGuardianAI()
         self.maintenance_mode = SECURITY_CONFIG["maintenance_mode"]
         self.request_counts = defaultdict(list)
+        self.failed_auth_attempts = defaultdict(int)
+        self.honeypot_hits = defaultdict(int)
     
     async def process_request(self, request: Request) -> Dict:
-        """Traiter et analyser une requête"""
+        """Traiter et analyser une requête avec toutes les protections PHASE 6"""
         client_ip = self._get_client_ip(request)
         user_agent = request.headers.get("user-agent", "")
         
@@ -339,16 +343,33 @@ class WAF:
         if client_ip in self.blocked_ips:
             return await self._handle_blocked_ip(client_ip, request)
         
+        # Vérification géographique
+        if not await self.country_blocker.is_country_allowed(client_ip):
+            await self._block_ip_temporarily(client_ip, "GEO_BLOCK")
+            return await self._handle_geo_blocked(client_ip, request)
+        
+        # Vérification honeypot
+        if await self._check_honeypot(request):
+            await self._block_ip_temporarily(client_ip, "HONEYPOT")
+            return await self._handle_honeypot_hit(client_ip, request)
+        
         # Analyse rate limiting
-        risk_score = await self._analyze_rate_limiting(client_ip)
+        rate_risk = await self._analyze_rate_limiting(client_ip)
         
         # Détection patterns suspects
         content_risk = await self._analyze_request_content(request)
         
+        # Analyse IA Guardian
+        ai_analysis = await self.guardian_ai.analyze_request(request, client_ip)
+        
         # Score de risque total
-        total_risk = max(risk_score, content_risk)
+        total_risk = max(rate_risk, content_risk, ai_analysis["ai_risk_score"])
         
         should_block = total_risk > 0.7
+        
+        # Blocage automatique si score élevé
+        if should_block:
+            await self._block_ip_temporarily(client_ip, "HIGH_RISK")
         
         # Logging
         await self._log_security_event(request, client_ip, user_agent, total_risk, should_block)
@@ -357,18 +378,78 @@ class WAF:
             "allowed": not should_block,
             "risk_score": total_risk,
             "ip": client_ip,
-            "reasons": ["High risk score"] if should_block else []
+            "ai_analysis": ai_analysis,
+            "reasons": self._get_block_reasons(rate_risk, content_risk, ai_analysis["ai_risk_score"]) if should_block else []
         }
+    
+    async def _check_honeypot(self, request: Request) -> bool:
+        """Vérifier si la requête touche un honeypot"""
+        for honeypot in SECURITY_CONFIG["honeypot_endpoints"]:
+            if honeypot in request.url.path:
+                return True
+        return False
+    
+    async def _handle_honeypot_hit(self, client_ip: str, request: Request) -> Dict:
+        """Gérer une tentative d'accès à un honeypot"""
+        self.honeypot_hits[client_ip] += 1
+        
+        return {
+            "allowed": False,
+            "risk_score": 1.0,
+            "ip": client_ip,
+            "reasons": ["Honeypot access detected - IP blocked"]
+        }
+    
+    async def _handle_geo_blocked(self, client_ip: str, request: Request) -> Dict:
+        """Gérer un blocage géographique"""
+        return {
+            "allowed": False,
+            "risk_score": 0.9,
+            "ip": client_ip,
+            "reasons": ["Access from restricted geographical location"]
+        }
+    
+    async def _block_ip_temporarily(self, client_ip: str, reason: str):
+        """Bloquer temporairement une IP"""
+        self.blocked_ips.add(client_ip)
+        
+        # Programmer le déblocage automatique (24h)
+        async def unblock_later():
+            await asyncio.sleep(86400)  # 24 heures
+            self.blocked_ips.discard(client_ip)
+        
+        asyncio.create_task(unblock_later())
+    
+    def _get_block_reasons(self, rate_risk: float, content_risk: float, ai_risk: float) -> List[str]:
+        """Obtenir les raisons du blocage"""
+        reasons = []
+        
+        if rate_risk > 0.7:
+            reasons.append("Rate limit exceeded")
+        
+        if content_risk > 0.7:
+            reasons.append("Suspicious content detected")
+        
+        if ai_risk > 0.7:
+            reasons.append("AI Guardian threat detection")
+        
+        return reasons
     
     def _get_client_ip(self, request: Request) -> str:
         """Obtenir l'IP réelle du client"""
+        # Vérifier les headers de proxy
         forwarded_for = request.headers.get("x-forwarded-for")
         if forwarded_for:
             return forwarded_for.split(",")[0].strip()
+        
+        real_ip = request.headers.get("x-real-ip")
+        if real_ip:
+            return real_ip
+        
         return request.client.host if request.client else "unknown"
     
     async def _analyze_rate_limiting(self, ip: str) -> float:
-        """Analyser le rate limiting"""
+        """Analyser le rate limiting avec limites plus strictes"""
         now = time.time()
         
         # Nettoyer les anciennes requêtes
@@ -377,23 +458,42 @@ class WAF:
         # Ajouter la requête actuelle
         self.request_counts[ip].append(now)
         
-        # Compter les requêtes récentes
+        # Compter les requêtes récentes (1 minute)
         recent_requests = sum(1 for t in self.request_counts[ip] if now - t < 60)
         
         if recent_requests > SECURITY_CONFIG["max_requests_per_minute"]:
+            return 0.9
+        
+        # Compter les requêtes par heure
+        hourly_requests = len(self.request_counts[ip])
+        
+        if hourly_requests > SECURITY_CONFIG["max_requests_per_hour"]:
             return 0.8
         
         return 0.0
     
     async def _analyze_request_content(self, request: Request) -> float:
-        """Analyser le contenu de la requête"""
-        content = str(request.url) + " " + str(request.headers)
+        """Analyser le contenu de la requête avec patterns étendus"""
+        content = " ".join([
+            str(request.url),
+            str(request.headers),
+            request.headers.get("user-agent", "")
+        ])
         
+        risk_score = 0.0
+        
+        # Vérifier les patterns suspects
         for pattern in SECURITY_CONFIG["suspicious_patterns"]:
             if re.search(pattern, content, re.IGNORECASE):
-                return 0.9
+                risk_score += 0.2
         
-        return 0.0
+        # Vérifier les user agents suspects
+        user_agent = request.headers.get("user-agent", "").lower()
+        for bot_agent in SECURITY_CONFIG["bot_user_agents"]:
+            if bot_agent in user_agent:
+                risk_score += 0.3
+        
+        return min(risk_score, 1.0)
     
     async def _handle_blocked_ip(self, ip: str, request: Request) -> Dict:
         """Gérer une IP bloquée"""
