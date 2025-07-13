@@ -23,7 +23,7 @@ import json
 import base64
 import bcrypt
 
-# Import du module de sécurité PHASE 7 - SENTINEL CORE
+# Import du module de sécurité PHASE 7 - SENTINEL CORE et Smart Commerce PHASE 8
 try:
     from .security_module import (
         get_security_check, waf_instance, limiter, oauth2_scheme,
@@ -31,6 +31,7 @@ try:
         ml_detector, gpt_assistant, multilingual_chatbot, 
         continuous_monitor, EnhancedWAF
     )
+    from .smart_commerce import smart_commerce, SmartProduct, ShoppingCart, UserPreferences
 except ImportError:
     # Fallback si le module n'est pas trouvé
     async def get_security_check(request: Request):
@@ -87,6 +88,19 @@ except ImportError:
                 "suspicious_activities": []
             }
     
+    class MockSmartCommerce:
+        async def get_all_products(self, category=None):
+            return []
+        
+        async def get_product_by_id(self, product_id):
+            return None
+        
+        async def create_cart(self, session_id, user_id=None):
+            return {"id": "mock-cart", "items": [], "total_price": 0.0}
+        
+        async def get_categories(self):
+            return {}
+    
     limiter = None
     oauth2_scheme = None
     waf_instance = MockWAF()
@@ -98,6 +112,10 @@ except ImportError:
     ml_detector = None
     continuous_monitor = None
     EnhancedWAF = MockWAF
+    smart_commerce = MockSmartCommerce()
+    SmartProduct = dict
+    ShoppingCart = dict
+    UserPreferences = dict
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
