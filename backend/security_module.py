@@ -26,13 +26,17 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import os
 
-# Configuration sécurité
+# Configuration sécurité PHASE 6
 SECURITY_CONFIG = {
-    "max_requests_per_minute": 60,
-    "max_requests_per_hour": 1000,
+    "max_requests_per_minute": 5,  # Réduit pour plus de sécurité
+    "max_requests_per_hour": 100,
     "blocked_countries": [],  # Liste ISO codes pays bloqués
+    "allowed_countries": ["FR", "DZ", "AE"],  # France, Algérie, Dubaï
     "maintenance_mode": False,
-    "auto_ban_threshold": 10,
+    "auto_ban_threshold": 5,  # Plus strict
+    "password_hash_rounds": 12,  # bcrypt rounds
+    "api_key_expiration_hours": 2,  # Expiration API keys
+    "audit_interval_hours": 24,  # Audit automatique
     "suspicious_patterns": [
         r"union\s+select",
         r"<script[^>]*>",
@@ -45,10 +49,21 @@ SECURITY_CONFIG = {
         r"\/proc\/",
         r"cmd\.exe",
         r"powershell",
+        r"base64_decode",
+        r"system\s*\(",
+        r"exec\s*\(",
+        r"phpinfo",
+        r"wp-admin",
+        r"admin\.php",
     ],
     "bot_user_agents": [
         "bot", "crawler", "spider", "scraper", "wget", "curl",
-        "python-requests", "libwww-perl", "java/", "go-http-client"
+        "python-requests", "libwww-perl", "java/", "go-http-client",
+        "scrapy", "beautifulsoup", "selenium", "phantomjs"
+    ],
+    "honeypot_endpoints": [
+        "/admin.php", "/wp-admin/", "/phpmyadmin/", "/.env",
+        "/config.php", "/backup/", "/database/", "/logs/"
     ]
 }
 
