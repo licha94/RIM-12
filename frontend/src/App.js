@@ -861,6 +861,8 @@ const AccountPage = () => {
 
 // About Us Page
 const AboutPage = () => {
+  const { wallet } = useApp();
+  
   return (
     <div className="min-h-screen bg-gray-900 py-12">
       <div className="container mx-auto px-4 max-w-4xl">
@@ -934,8 +936,15 @@ const AboutPage = () => {
             <p className="text-gray-200 mb-6">
               Be part of the brave souls shaping the future of commerce and governance.
             </p>
-            <button className="bg-white text-blue-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
-              Connect Your Wallet
+            <button 
+              onClick={wallet.isConnected ? null : wallet.connectWallet}
+              className={`px-8 py-3 rounded-lg font-semibold transition ${
+                wallet.isConnected 
+                  ? 'bg-green-600 text-white cursor-default' 
+                  : 'bg-white text-blue-900 hover:bg-gray-100'
+              }`}
+            >
+              {wallet.isConnected ? '✓ Wallet Connected' : 'Connect Your Wallet'}
             </button>
           </section>
         </div>
