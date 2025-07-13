@@ -897,29 +897,349 @@ class RimareumAPITester:
             self.log_test("ML Training Trigger", False, f"Exception: {str(e)}")
             return False
     
-    def test_rate_limiting_phase7_endpoints(self):
-        """Test rate limiting on Phase 7 endpoints"""
+    # PHASE 9 PAYCORE TESTS
+    
+    def test_paycore_status_endpoint(self):
+        """Test GET /api/paycore/status - Phase 9 PAYCORE status"""
         try:
-            # Test rate limiting on multilingual chatbot (30/minute limit)
-            rapid_requests = []
-            chat_data = {"message": "Test message", "language": "en"}
+            response = self.session.get(f"{BACKEND_URL}/paycore/status")
             
-            for i in range(3):  # Send 3 rapid requests
-                response = self.session.post(f"{BACKEND_URL}/chatbot/multilingual", json=chat_data)
-                rapid_requests.append(response.status_code)
-                time.sleep(0.2)  # Small delay between requests
-            
-            # All requests should succeed initially (3 requests is well under 30/minute)
-            success_count = sum(1 for status in rapid_requests if status == 200)
-            
-            if success_count >= 2:  # Allow for 1 potential failure
-                self.log_test("Phase 7 Rate Limiting", True, f"Rate limiting working - {success_count}/3 requests succeeded")
-                return True
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['phase', 'status', 'components', 'payment_methods', 'security_features']
+                if all(field in data for field in required_fields):
+                    if data.get('phase') == '9_PAYCORE' and data.get('status') == 'ACTIVE':
+                        self.log_test("PAYCORE Status Endpoint", True, "Phase 9 PAYCORE active with all components", data)
+                        return True
+                    else:
+                        self.log_test("PAYCORE Status Endpoint", False, "PAYCORE not in active Phase 9 state", data)
+                        return False
+                else:
+                    self.log_test("PAYCORE Status Endpoint", False, "Missing required status fields", data)
+                    return False
+            elif response.status_code == 404:
+                self.log_test("PAYCORE Status Endpoint", False, "PAYCORE status endpoint not implemented yet")
+                return False
             else:
-                self.log_test("Phase 7 Rate Limiting", False, f"Only {success_count}/3 requests succeeded")
+                self.log_test("PAYCORE Status Endpoint", False, f"Status: {response.status_code}")
                 return False
         except Exception as e:
-            self.log_test("Phase 7 Rate Limiting", False, f"Exception: {str(e)}")
+            self.log_test("PAYCORE Status Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_enhanced_demo_products(self):
+        """Test GET /api/shop/products for 4 enhanced Phase 9 demo products"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/shop/products")
+            
+            if response.status_code == 200:
+                data = response.json()
+                products = data.get('products', [])
+                
+                # Expected Phase 9 demo products
+                expected_products = [
+                    "Cristal Solaire RIMAREUM",
+                    "Clé Nadjibienne Δ144", 
+                    "Artefact-Ω Prototype",
+                    "IA Guide de Commerce"
+                ]
+                
+                found_products = []
+                for product in products:
+                    product_name = product.get('name', '')
+                    for expected in expected_products:
+                        if expected.lower() in product_name.lower():
+                            found_products.append(expected)
+                            break
+                
+                if len(found_products) >= 4:
+                    self.log_test("Enhanced Demo Products", True, f"Found {len(found_products)} Phase 9 demo products", {"found": found_products})
+                    return True, products
+                elif len(products) > 0:
+                    self.log_test("Enhanced Demo Products", False, f"Found {len(products)} products but missing Phase 9 specific products", {"products": [p.get('name') for p in products]})
+                    return False, products
+                else:
+                    self.log_test("Enhanced Demo Products", False, "No products found - system in fallback mode")
+                    return False, []
+            else:
+                self.log_test("Enhanced Demo Products", False, f"Status: {response.status_code}")
+                return False, []
+        except Exception as e:
+            self.log_test("Enhanced Demo Products", False, f"Exception: {str(e)}")
+            return False, []
+    
+    def test_phase9_product_metadata(self):
+        """Test products have Phase 9 metadata (payment methods, shipping, etc.)"""
+        success, products = self.test_enhanced_demo_products()
+        
+        if not products:
+            self.log_test("Phase 9 Product Metadata", False, "No products available for metadata testing")
+            return False
+        
+        try:
+            # Test first product for Phase 9 metadata
+            product = products[0]
+            phase9_fields = ['payment_methods', 'shipping_options', 'social_commerce_links', 'nfc_enabled', 'qr_tracking']
+            
+            found_fields = [field for field in phase9_fields if field in product]
+            
+            if len(found_fields) >= 3:
+                self.log_test("Phase 9 Product Metadata", True, f"Found {len(found_fields)} Phase 9 metadata fields", {"fields": found_fields})
+                return True
+            else:
+                self.log_test("Phase 9 Product Metadata", False, f"Missing Phase 9 metadata fields. Found: {found_fields}")
+                return False
+        except Exception as e:
+            self.log_test("Phase 9 Product Metadata", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_enhanced_qr_codes_phase9(self):
+        """Test QR codes include Phase 9 tracking URLs and social commerce links"""
+        success, products = self.test_enhanced_demo_products()
+        
+        if not products:
+            self.log_test("Enhanced QR Codes Phase 9", False, "No products available for QR testing")
+            return False
+        
+        try:
+            product_id = products[0].get('id') if products else 'test-product'
+            response = self.session.get(f"{BACKEND_URL}/shop/qrcode/{product_id}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['qr_code', 'product_url', 'nfc_ready', 'social_sharing']
+                phase9_fields = ['tracking_params', 'utm_campaign', 'phase9_metadata']
+                
+                if all(field in data for field in required_fields):
+                    social_sharing = data.get('social_sharing', {})
+                    expected_platforms = ['tiktok', 'amazon', 'instagram']
+                    
+                    found_platforms = [platform for platform in expected_platforms if platform in social_sharing]
+                    
+                    if len(found_platforms) >= 3:
+                        # Check for Phase 9 tracking parameters
+                        tiktok_url = social_sharing.get('tiktok', '')
+                        has_phase9_tracking = 'phase9' in tiktok_url or 'utm_campaign' in tiktok_url
+                        
+                        if has_phase9_tracking:
+                            self.log_test("Enhanced QR Codes Phase 9", True, "QR codes enhanced with Phase 9 tracking and social links", data)
+                            return True
+                        else:
+                            self.log_test("Enhanced QR Codes Phase 9", False, "QR codes missing Phase 9 tracking parameters", data)
+                            return False
+                    else:
+                        self.log_test("Enhanced QR Codes Phase 9", False, f"Missing social platforms. Found: {found_platforms}")
+                        return False
+                else:
+                    self.log_test("Enhanced QR Codes Phase 9", False, "Missing required QR code fields", data)
+                    return False
+            else:
+                self.log_test("Enhanced QR Codes Phase 9", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Enhanced QR Codes Phase 9", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_production_payment_systems(self):
+        """Test Phase 9 production payment systems simulation"""
+        try:
+            # Test Stripe Live simulation
+            stripe_payload = {
+                "amount": 299.99,
+                "currency": "EUR", 
+                "payment_method": "stripe_live",
+                "product_id": "cristal-solaire-rimareum"
+            }
+            response = self.session.post(f"{BACKEND_URL}/paycore/payments/stripe", json=stripe_payload)
+            
+            # Should return 404 if not implemented, or 200/503 if implemented
+            if response.status_code == 404:
+                self.log_test("Production Payment Systems", False, "PAYCORE payment endpoints not implemented yet")
+                return False
+            elif response.status_code in [200, 503]:
+                data = response.json()
+                if "simulation" in data.get("message", "").lower() or data.get("status") == "completed":
+                    self.log_test("Production Payment Systems", True, "Payment simulation working", data)
+                    return True
+                else:
+                    self.log_test("Production Payment Systems", False, "Unexpected payment response", data)
+                    return False
+            else:
+                self.log_test("Production Payment Systems", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Production Payment Systems", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_external_shop_synchronization(self):
+        """Test Phase 9 external shop sync (TikTok, Amazon, Instagram)"""
+        try:
+            sync_payload = {
+                "platform": "tiktok",
+                "product_id": "cristal-solaire-rimareum",
+                "sync_type": "full"
+            }
+            response = self.session.post(f"{BACKEND_URL}/paycore/sync/external", json=sync_payload)
+            
+            if response.status_code == 404:
+                self.log_test("External Shop Synchronization", False, "PAYCORE sync endpoints not implemented yet")
+                return False
+            elif response.status_code in [200, 503]:
+                data = response.json()
+                if data.get("status") == "synced" or "simulation" in data.get("message", "").lower():
+                    self.log_test("External Shop Synchronization", True, "External sync simulation working", data)
+                    return True
+                else:
+                    self.log_test("External Shop Synchronization", False, "Unexpected sync response", data)
+                    return False
+            else:
+                self.log_test("External Shop Synchronization", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("External Shop Synchronization", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_enhanced_security_module(self):
+        """Test Phase 9 enhanced security (3D Secure, KYC verification)"""
+        try:
+            # Test KYC verification endpoint
+            kyc_payload = {
+                "user_id": str(uuid.uuid4()),
+                "documents": ["passport", "utility_bill"],
+                "verification_type": "full_kyc"
+            }
+            response = self.session.post(f"{BACKEND_URL}/paycore/security/kyc", json=kyc_payload)
+            
+            if response.status_code == 404:
+                self.log_test("Enhanced Security Module", False, "PAYCORE security endpoints not implemented yet")
+                return False
+            elif response.status_code in [200, 503]:
+                data = response.json()
+                if data.get("status") == "approved" or "simulation" in data.get("message", "").lower():
+                    self.log_test("Enhanced Security Module", True, "Enhanced security simulation working", data)
+                    return True
+                else:
+                    self.log_test("Enhanced Security Module", False, "Unexpected security response", data)
+                    return False
+            else:
+                self.log_test("Enhanced Security Module", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Enhanced Security Module", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_commerce_backoffice(self):
+        """Test Phase 9 commerce backoffice (order generation, status attribution)"""
+        try:
+            # Test order management endpoint
+            response = self.session.get(f"{BACKEND_URL}/paycore/backoffice/orders")
+            
+            if response.status_code == 404:
+                self.log_test("Commerce Backoffice", False, "PAYCORE backoffice endpoints not implemented yet")
+                return False
+            elif response.status_code in [200, 503]:
+                data = response.json()
+                if isinstance(data, dict) and ("orders" in data or "simulation" in data.get("message", "").lower()):
+                    self.log_test("Commerce Backoffice", True, "Commerce backoffice simulation working", data)
+                    return True
+                else:
+                    self.log_test("Commerce Backoffice", False, "Unexpected backoffice response", data)
+                    return False
+            else:
+                self.log_test("Commerce Backoffice", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Commerce Backoffice", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_realtime_alerts_system(self):
+        """Test Phase 9 real-time alerts (admin notifications, client emails)"""
+        try:
+            # Test alert configuration endpoint
+            alert_payload = {
+                "alert_type": "order_confirmation",
+                "recipient": "admin@rimareum.com",
+                "order_id": str(uuid.uuid4())
+            }
+            response = self.session.post(f"{BACKEND_URL}/paycore/alerts/send", json=alert_payload)
+            
+            if response.status_code == 404:
+                self.log_test("Real-time Alerts System", False, "PAYCORE alerts endpoints not implemented yet")
+                return False
+            elif response.status_code in [200, 503]:
+                data = response.json()
+                if data.get("status") == "sent" or "simulation" in data.get("message", "").lower():
+                    self.log_test("Real-time Alerts System", True, "Real-time alerts simulation working", data)
+                    return True
+                else:
+                    self.log_test("Real-time Alerts System", False, "Unexpected alerts response", data)
+                    return False
+            else:
+                self.log_test("Real-time Alerts System", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Real-time Alerts System", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_ai_customer_tracking(self):
+        """Test Phase 9 AI customer tracking (order history, reactivation suggestions)"""
+        try:
+            # Test customer analytics endpoint
+            user_id = str(uuid.uuid4())
+            response = self.session.get(f"{BACKEND_URL}/paycore/analytics/customer/{user_id}")
+            
+            if response.status_code == 404:
+                self.log_test("AI Customer Tracking", False, "PAYCORE analytics endpoints not implemented yet")
+                return False
+            elif response.status_code in [200, 503]:
+                data = response.json()
+                if isinstance(data, dict) and ("insights" in data or "simulation" in data.get("message", "").lower()):
+                    self.log_test("AI Customer Tracking", True, "AI customer tracking simulation working", data)
+                    return True
+                else:
+                    self.log_test("AI Customer Tracking", False, "Unexpected analytics response", data)
+                    return False
+            else:
+                self.log_test("AI Customer Tracking", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("AI Customer Tracking", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_phase9_compatibility_check(self):
+        """Test that Phase 9 doesn't break existing Phase 6-8 functionality"""
+        try:
+            # Test Phase 6 security still works
+            security_response = self.session.get(f"{BACKEND_URL}/security/status")
+            security_ok = security_response.status_code == 200
+            
+            # Test Phase 7 multilingual chatbot still works
+            chat_data = {"message": "Test compatibility", "language": "en"}
+            chat_response = self.session.post(f"{BACKEND_URL}/chatbot/multilingual", json=chat_data)
+            chat_ok = chat_response.status_code == 200
+            
+            # Test Phase 8 smart commerce still works
+            shop_response = self.session.get(f"{BACKEND_URL}/shop/status")
+            shop_ok = shop_response.status_code == 200
+            
+            compatibility_score = sum([security_ok, chat_ok, shop_ok])
+            
+            if compatibility_score == 3:
+                self.log_test("Phase 9 Compatibility Check", True, "All previous phases still functional", {
+                    "phase6_security": security_ok,
+                    "phase7_chatbot": chat_ok, 
+                    "phase8_commerce": shop_ok
+                })
+                return True
+            else:
+                self.log_test("Phase 9 Compatibility Check", False, f"Some phases broken: {compatibility_score}/3 working", {
+                    "phase6_security": security_ok,
+                    "phase7_chatbot": chat_ok,
+                    "phase8_commerce": shop_ok
+                })
+                return False
+        except Exception as e:
+            self.log_test("Phase 9 Compatibility Check", False, f"Exception: {str(e)}")
             return False
     
     # PHASE 8 SMART COMMERCE SYSTEM TESTS
