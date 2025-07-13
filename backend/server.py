@@ -452,82 +452,79 @@ async def create_product(product_data: ProductCreate, current_user: Optional[Use
 
 # --- PAYMENT ROUTES ---
 
+# --- PAYMENT ENDPOINTS ---
 @api_router.post("/payments/checkout/session")
+@limiter.limit("10/minute") if limiter else lambda x: x
 async def create_checkout_session(
-    request: dict,
-    origin: Optional[str] = Header(None, alias="origin")
+    payment_request: PaymentRequest,
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
 ):
-    """Create Stripe checkout session"""
-    global stripe_checkout
-    if not stripe_checkout:
-        raise HTTPException(status_code=503, detail="Payment service not configured")
-    
+    """Create a checkout session for payment"""
     try:
-        # Extract product info and calculate amount
-        product_id = request.get("product_id")
-        quantity = request.get("quantity", 1)
+        if not stripe_checkout:
+            raise HTTPException(
+                status_code=503,
+                detail="Payment service not configured"
+            )
         
-        if product_id:
-            product = await db.products.find_one({"id": product_id})
-            if not product:
-                raise HTTPException(status_code=404, detail="Product not found")
-            amount = product["price"] * quantity
-        else:
-            amount = request.get("amount")
-            if not amount:
-                raise HTTPException(status_code=400, detail="Amount or product_id required")
-        
-        # Use origin from header or fallback
-        base_url = origin or "https://20423e44-cefc-4fee-92df-010802a91699.preview.emergentagent.com"
-        
-        checkout_request = CheckoutSessionRequest(
-            amount=float(amount),
-            currency="usd",
-            success_url=f"{base_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{base_url}/payment/cancel",
-            metadata={
-                "product_id": product_id or "custom",
-                "quantity": str(quantity),
-                "source": "rimareum"
-            }
+        # Create checkout session
+        session_request = CheckoutSessionRequest(
+            success_url="https://your-domain.com/success",
+            cancel_url="https://your-domain.com/cancel",
+            line_items=[{
+                "price_data": {
+                    "currency": payment_request.currency.lower(),
+                    "product_data": {"name": f"Product {payment_request.product_id}"},
+                    "unit_amount": int(payment_request.amount * 100)
+                },
+                "quantity": 1
+            }]
         )
         
-        session = await stripe_checkout.create_checkout_session(checkout_request)
+        session = await stripe_checkout.create_session(session_request)
         
-        # Create payment transaction record
-        payment_transaction = PaymentTransaction(
-            session_id=session.session_id,
-            amount=float(amount),
-            currency="usd",
-            payment_status="pending",
-            metadata=checkout_request.metadata
+        # Store payment transaction
+        transaction = PaymentTransaction(
+            amount=payment_request.amount,
+            currency=payment_request.currency,
+            product_id=payment_request.product_id,
+            payment_method=payment_request.payment_method,
+            session_id=session.id
         )
-        await db.payment_transactions.insert_one(payment_transaction.dict())
         
-        return {"url": session.url, "session_id": session.session_id}
+        await db.payments.insert_one(transaction.dict())
+        
+        return {"session_id": session.id, "url": session.url}
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Payment error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.get("/payments/checkout/status/{session_id}")
-async def get_checkout_status(session_id: str):
-    """Get payment status"""
-    global stripe_checkout
-    if not stripe_checkout:
-        raise HTTPException(status_code=503, detail="Payment service not configured")
-    
+@api_router.get("/payments/session/{session_id}/status")
+@limiter.limit("30/minute") if limiter else lambda x: x
+async def get_payment_status(
+    session_id: str,
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Get payment session status"""
     try:
-        status = await stripe_checkout.get_checkout_status(session_id)
+        if not stripe_checkout:
+            raise HTTPException(
+                status_code=503,
+                detail="Payment service not configured"
+            )
         
-        # Update local payment record
-        await db.payment_transactions.update_one(
-            {"session_id": session_id},
-            {"$set": {"payment_status": status.payment_status}}
-        )
+        status = await stripe_checkout.get_session_status(session_id)
         
-        return status.dict()
+        return {
+            "session_id": session_id,
+            "status": status.status,
+            "payment_intent": status.payment_intent
+        }
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Status check error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- WALLET ROUTES ---
 
