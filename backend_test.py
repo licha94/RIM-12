@@ -1155,13 +1155,13 @@ class RimareumAPITester:
         cart_success, session_id, cart_id = self.test_create_shopping_cart()
         if not cart_success:
             self.log_test("Add to Cart", False, "Failed to create cart for testing")
-            return False
+            return False, None
         
         # Get a product to add
         success, products = self.test_shop_products_all()
         if not success or not products:
             self.log_test("Add to Cart", False, "No products available for testing")
-            return False
+            return False, None
         
         try:
             product_id = products[0]['id']
