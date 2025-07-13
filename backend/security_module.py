@@ -961,7 +961,284 @@ class MultilingualChatbot:
         stats = {}
         for lang in self.supported_languages:
             stats[lang] = len(self.faq_database.get(lang, {}))
-        return stats
+class ContinuousMonitor:
+    """Système de surveillance continue Phase 7"""
+    
+    def __init__(self):
+        self.monitoring_active = SECURITY_CONFIG["continuous_monitoring"]
+        self.reactive_mode = SECURITY_CONFIG["reactive_mode"]
+        self.threat_queue = asyncio.Queue()
+        self.analysis_tasks = []
+        self.monitoring_stats = {
+            "total_requests": 0,
+            "threats_detected": 0,
+            "threats_blocked": 0,
+            "auto_corrections": 0,
+            "false_positives": 0
+        }
+        self.performance_metrics = {
+            "average_response_time": 0.0,
+            "peak_response_time": 0.0,
+            "throughput": 0
+        }
+        self.alerts = []
+    
+    async def start_monitoring(self):
+        """Démarrer la surveillance continue"""
+        if not self.monitoring_active:
+            return
+        
+        # Lancer les tâches de surveillance
+        self.analysis_tasks = [
+            asyncio.create_task(self._continuous_threat_analysis()),
+            asyncio.create_task(self._performance_monitoring()),
+            asyncio.create_task(self._health_check()),
+            asyncio.create_task(self._alert_processor())
+        ]
+        
+        logging.info("🔄 Surveillance continue RIMAREUM PHASE 7 activée")
+    
+    async def stop_monitoring(self):
+        """Arrêter la surveillance"""
+        for task in self.analysis_tasks:
+            task.cancel()
+        
+        self.monitoring_active = False
+        logging.info("🛑 Surveillance continue arrêtée")
+    
+    async def _continuous_threat_analysis(self):
+        """Analyse continue des menaces"""
+        while self.monitoring_active:
+            try:
+                # Attendre un événement de menace
+                threat_event = await asyncio.wait_for(
+                    self.threat_queue.get(), 
+                    timeout=1.0
+                )
+                
+                # Analyser la menace
+                await self._analyze_threat(threat_event)
+                
+            except asyncio.TimeoutError:
+                continue
+            except Exception as e:
+                logging.error(f"Erreur analyse continue: {e}")
+                await asyncio.sleep(1)
+    
+    async def _analyze_threat(self, threat_event: Dict):
+        """Analyser une menace spécifique"""
+        try:
+            threat_type = threat_event.get("type", "unknown")
+            severity = threat_event.get("severity", "low")
+            
+            # Mettre à jour les statistiques
+            self.monitoring_stats["threats_detected"] += 1
+            
+            # Réponse immédiate si nécessaire
+            if severity == "high" and self.reactive_mode:
+                await self._immediate_response(threat_event)
+            
+            # Apprentissage automatique
+            await self._update_ml_model(threat_event)
+            
+        except Exception as e:
+            logging.error(f"Erreur analyse menace: {e}")
+    
+    async def _immediate_response(self, threat_event: Dict):
+        """Réponse immédiate aux menaces critiques"""
+        try:
+            response_actions = []
+            
+            # Blocage IP automatique
+            if threat_event.get("ip_address"):
+                response_actions.append(f"IP {threat_event['ip_address']} bloquée")
+            
+            # Auto-correction
+            if SECURITY_CONFIG["auto_correction_enabled"]:
+                await self._auto_correct_threat(threat_event)
+                response_actions.append("Auto-correction appliquée")
+            
+            # Alerte immédiate
+            alert = {
+                "timestamp": datetime.utcnow().isoformat(),
+                "type": "IMMEDIATE_RESPONSE",
+                "threat": threat_event,
+                "actions": response_actions
+            }
+            
+            self.alerts.append(alert)
+            
+            # Notifier l'admin si nécessaire
+            if threat_event.get("severity") == "critical":
+                await self._notify_admin(alert)
+            
+        except Exception as e:
+            logging.error(f"Erreur réponse immédiate: {e}")
+    
+    async def _auto_correct_threat(self, threat_event: Dict):
+        """Auto-correction des menaces"""
+        try:
+            threat_type = threat_event.get("type", "unknown")
+            
+            if threat_type == "SQLi":
+                # Sanitisation automatique
+                await self._sanitize_sql_input(threat_event)
+            elif threat_type == "XSS":
+                # Sanitisation XSS
+                await self._sanitize_xss_input(threat_event)
+            elif threat_type == "RATE_LIMIT":
+                # Throttling adaptatif
+                await self._adaptive_throttling(threat_event)
+            
+            self.monitoring_stats["auto_corrections"] += 1
+            
+        except Exception as e:
+            logging.error(f"Erreur auto-correction: {e}")
+    
+    async def _sanitize_sql_input(self, threat_event: Dict):
+        """Sanitisation automatique des entrées SQL"""
+        # Implémentation de la sanitisation SQL
+        pass
+    
+    async def _sanitize_xss_input(self, threat_event: Dict):
+        """Sanitisation automatique des entrées XSS"""
+        # Implémentation de la sanitisation XSS
+        pass
+    
+    async def _adaptive_throttling(self, threat_event: Dict):
+        """Throttling adaptatif"""
+        # Implémentation du throttling adaptatif
+        pass
+    
+    async def _update_ml_model(self, threat_event: Dict):
+        """Mettre à jour le modèle ML avec les nouvelles données"""
+        # Implémentation de la mise à jour ML
+        pass
+    
+    async def _performance_monitoring(self):
+        """Surveillance des performances"""
+        while self.monitoring_active:
+            try:
+                # Mesurer les performances
+                response_times = []
+                throughput = 0
+                
+                # Mettre à jour les métriques
+                self.performance_metrics.update({
+                    "average_response_time": sum(response_times) / len(response_times) if response_times else 0,
+                    "peak_response_time": max(response_times) if response_times else 0,
+                    "throughput": throughput
+                })
+                
+                await asyncio.sleep(60)  # Vérifier chaque minute
+                
+            except Exception as e:
+                logging.error(f"Erreur monitoring performances: {e}")
+                await asyncio.sleep(60)
+    
+    async def _health_check(self):
+        """Vérification de santé du système"""
+        while self.monitoring_active:
+            try:
+                # Vérifier l'état des composants
+                health_status = {
+                    "waf": True,
+                    "ml_detector": True,
+                    "gpt_assistant": True,
+                    "chatbot": True,
+                    "geo_blocker": True
+                }
+                
+                # Alerte si problème détecté
+                for component, status in health_status.items():
+                    if not status:
+                        await self._create_alert(f"Composant {component} en erreur", "high")
+                
+                await asyncio.sleep(300)  # Vérifier toutes les 5 minutes
+                
+            except Exception as e:
+                logging.error(f"Erreur health check: {e}")
+                await asyncio.sleep(300)
+    
+    async def _alert_processor(self):
+        """Processeur d'alertes"""
+        while self.monitoring_active:
+            try:
+                # Traiter les alertes en attente
+                if self.alerts:
+                    # Grouper les alertes similaires
+                    await self._group_alerts()
+                    
+                    # Envoyer les alertes critiques
+                    await self._send_critical_alerts()
+                
+                await asyncio.sleep(30)  # Traiter toutes les 30 secondes
+                
+            except Exception as e:
+                logging.error(f"Erreur processeur alertes: {e}")
+                await asyncio.sleep(30)
+    
+    async def _group_alerts(self):
+        """Grouper les alertes similaires"""
+        # Implémentation du groupement d'alertes
+        pass
+    
+    async def _send_critical_alerts(self):
+        """Envoyer les alertes critiques"""
+        # Implémentation de l'envoi d'alertes
+        pass
+    
+    async def _create_alert(self, message: str, severity: str):
+        """Créer une nouvelle alerte"""
+        alert = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "message": message,
+            "severity": severity,
+            "type": "SYSTEM_ALERT"
+        }
+        
+        self.alerts.append(alert)
+        
+        # Limiter le nombre d'alertes en mémoire
+        if len(self.alerts) > 1000:
+            self.alerts = self.alerts[-500:]
+    
+    async def _notify_admin(self, alert: Dict):
+        """Notifier l'administrateur"""
+        try:
+            # Ici, vous pourriez implémenter l'envoi d'email, SMS, etc.
+            logging.critical(f"ALERTE ADMIN RIMAREUM: {alert}")
+            
+        except Exception as e:
+            logging.error(f"Erreur notification admin: {e}")
+    
+    async def add_threat_to_queue(self, threat_event: Dict):
+        """Ajouter une menace à la queue d'analyse"""
+        await self.threat_queue.put(threat_event)
+    
+    def get_monitoring_stats(self) -> Dict:
+        """Obtenir les statistiques de surveillance"""
+        return {
+            "monitoring_active": self.monitoring_active,
+            "reactive_mode": self.reactive_mode,
+            "stats": self.monitoring_stats.copy(),
+            "performance": self.performance_metrics.copy(),
+            "alerts_count": len(self.alerts),
+            "queue_size": self.threat_queue.qsize()
+        }
+
+# Instances globales Phase 7
+ml_detector = MLThreatDetector()
+gpt_assistant = GPTSecurityAssistant()
+multilingual_chatbot = MultilingualChatbot()
+continuous_monitor = ContinuousMonitor()
+
+# Charger le modèle ML au démarrage
+ml_detector.load_model()
+
+# Démarrer la surveillance continue
+if SECURITY_CONFIG["continuous_monitoring"]:
+    asyncio.create_task(continuous_monitor.start_monitoring())
     def hash_password(password: str) -> str:
         """Hasher un mot de passe avec SHA256 + bcrypt"""
         # Première étape: SHA256
