@@ -535,24 +535,36 @@ class WAF:
 # Instance globale du WAF
 waf_instance = WAF()
 
+# Rate limiter global
+limiter = Limiter(key_func=get_remote_address)
+
+# OAuth2 scheme pour l'authentification
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token", auto_error=False)
+
 async def security_middleware(request: Request):
-    """Middleware de sécurité pour FastAPI"""
+    """Middleware de sécurité pour FastAPI PHASE 6"""
     
     # Ignorer les routes système
-    if request.url.path.startswith(("/_health", "/metrics", "/favicon.ico")):
+    if request.url.path.startswith(("/_health", "/metrics", "/favicon.ico", "/static")):
         return {"allowed": True, "risk_score": 0.0}
     
-    # Analyse de sécurité
+    # Analyse de sécurité complète
     result = await waf_instance.process_request(request)
     
     if not result["allowed"]:
+        # Construire un message d'erreur détaillé
+        error_detail = {
+            "error": "Request blocked by RIMAREUM Security System",
+            "reasons": result["reasons"],
+            "risk_score": result["risk_score"],
+            "ip": result["ip"],
+            "support": "Contact support@rimareum.com if you believe this is an error",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
         raise HTTPException(
             status_code=403,
-            detail={
-                "error": "Request blocked by security system",
-                "reasons": result["reasons"],
-                "support": "Contact support@rimareum.com if you believe this is an error"
-            }
+            detail=error_detail
         )
     
     return result
@@ -560,3 +572,96 @@ async def security_middleware(request: Request):
 async def get_security_check(request: Request):
     """Dépendance pour vérification de sécurité"""
     return await security_middleware(request)
+
+# Classes utilitaires pour l'audit
+class SecurityAuditScheduler:
+    """Planificateur d'audit automatique"""
+    
+    def __init__(self):
+        self.last_audit = datetime.utcnow()
+        self.audit_interval = timedelta(hours=SECURITY_CONFIG["audit_interval_hours"])
+    
+    async def run_scheduled_audit(self):
+        """Exécuter l'audit programmé"""
+        while True:
+            await asyncio.sleep(3600)  # Vérifier chaque heure
+            
+            if datetime.utcnow() - self.last_audit >= self.audit_interval:
+                await self._perform_audit()
+                self.last_audit = datetime.utcnow()
+    
+    async def _perform_audit(self):
+        """Effectuer l'audit de sécurité"""
+        audit_results = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "blocked_ips": len(waf_instance.blocked_ips),
+            "honeypot_hits": len(waf_instance.honeypot_hits),
+            "guardian_ai_patterns": len(waf_instance.guardian_ai.behavioral_model["suspicious_patterns"]),
+            "status": "completed"
+        }
+        
+        # Log des résultats d'audit
+        await waf_instance.audit_logger.log_event(
+            SecurityEvent(
+                timestamp=datetime.utcnow(),
+                ip_address="system",
+                user_agent="audit_scheduler",
+                request_path="/audit",
+                method="SYSTEM",
+                threat_type="AUDIT",
+                severity="INFO",
+                blocked=False,
+                details=audit_results
+            )
+        )
+
+# Instance du planificateur d'audit
+audit_scheduler = SecurityAuditScheduler()
+
+# Utilitaires pour les clés API
+class APIKeyManager:
+    """Gestionnaire des clés API avec expiration"""
+    
+    def __init__(self):
+        self.api_keys = {}
+        self.key_expiry = timedelta(hours=SECURITY_CONFIG["api_key_expiration_hours"])
+    
+    def generate_api_key(self, user_id: str) -> str:
+        """Générer une nouvelle clé API"""
+        api_key = secrets.token_urlsafe(32)
+        expiry = datetime.utcnow() + self.key_expiry
+        
+        self.api_keys[api_key] = {
+            "user_id": user_id,
+            "created": datetime.utcnow(),
+            "expires": expiry,
+            "active": True
+        }
+        
+        return api_key
+    
+    def validate_api_key(self, api_key: str) -> Optional[Dict]:
+        """Valider une clé API"""
+        if api_key not in self.api_keys:
+            return None
+        
+        key_data = self.api_keys[api_key]
+        
+        # Vérifier l'expiration
+        if datetime.utcnow() > key_data["expires"]:
+            del self.api_keys[api_key]
+            return None
+        
+        # Vérifier si active
+        if not key_data["active"]:
+            return None
+        
+        return key_data
+    
+    def revoke_api_key(self, api_key: str):
+        """Révoquer une clé API"""
+        if api_key in self.api_keys:
+            self.api_keys[api_key]["active"] = False
+
+# Instance du gestionnaire de clés API
+api_key_manager = APIKeyManager()
