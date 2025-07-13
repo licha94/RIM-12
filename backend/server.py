@@ -200,7 +200,7 @@ async def get_admin_stats():
 
 # --- SECURITY ENDPOINTS ---
 
-@app.get("/security/status")
+@api_router.get("/security/status")
 async def get_security_status():
     """Get security system status"""
     return {
@@ -213,7 +213,7 @@ async def get_security_status():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@app.post("/auth/register")
+@api_router.post("/auth/register")
 async def register_user(user_data: Dict[str, Any]):
     """Register new user"""
     user_id = str(uuid.uuid4())
@@ -235,7 +235,7 @@ async def register_user(user_data: Dict[str, Any]):
         "message": "User registered successfully"
     }
 
-@app.post("/auth/login")
+@api_router.post("/auth/login")
 async def login_user(login_data: Dict[str, Any]):
     """Login user"""
     username = login_data.get("username")
@@ -251,7 +251,7 @@ async def login_user(login_data: Dict[str, Any]):
         "api_key": user["api_key"]
     }
 
-@app.post("/security/report")
+@api_router.post("/security/report")
 async def report_security_event(event_data: Dict[str, Any]):
     """Report security event"""
     event = {
@@ -266,7 +266,7 @@ async def report_security_event(event_data: Dict[str, Any]):
         "event_id": event["id"]
     }
 
-@app.get("/security/audit")
+@api_router.get("/security/audit")
 async def get_security_audit():
     """Get security audit data"""
     return {
@@ -276,6 +276,24 @@ async def get_security_audit():
         "guardian_ai_status": "ACTIVE",
         "timestamp": datetime.utcnow().isoformat()
     }
+
+# Include the API router in the app
+app.include_router(api_router)
+
+# Error handlers
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=404,
+        content={"detail": "Endpoint not found", "path": str(request.url.path)}
+    )
+
+@app.exception_handler(500)
+async def internal_error_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc)}
+    )
 
 # --- PHASE 7 SENTINEL CORE ENDPOINTS ---
 
