@@ -125,6 +125,73 @@ SUBSCRIPTION_CONFIG = {
             "maitre_cristal": ["Maître", "Crystal Δ144", "Quantum Access"],
             "architecte_nadjibien": ["Architecte", "Nadjibien Master", "DAO Governor", "Sacred Access"]
         }
+    },
+    "churn_prediction": "enabled",
+    "email_sequence": {
+        "before_cancel": ["-7d", "-3d", "-1d"],
+        "after_signup": ["+1h", "+3d", "+7d"]
+    },
+    "upgrade_suggestions": True,
+    "discount_trigger": {
+        "risk_level": "high", 
+        "discount_code": "RIMAREUM_REACTIVATE10",
+        "discount_percentage": 10,
+        "validity_days": 7,
+        "auto_apply": True
+    },
+    "email_templates": {
+        "welcome_sequence": {
+            "+1h": {
+                "subject": "🚀 Bienvenue dans l'univers RIMAREUM !",
+                "template": "welcome_1h",
+                "personalization": True
+            },
+            "+3d": {
+                "subject": "✨ Découvrez vos premiers avantages RIMAREUM",
+                "template": "onboarding_3d", 
+                "include_recommendations": True
+            },
+            "+7d": {
+                "subject": "🎯 Maximisez votre expérience RIMAREUM",
+                "template": "engagement_7d",
+                "include_tier_upgrade": True
+            }
+        },
+        "retention_sequence": {
+            "-7d": {
+                "subject": "⚠️ Votre abonnement RIMAREUM expire bientôt",
+                "template": "retention_7d",
+                "include_benefits_reminder": True
+            },
+            "-3d": {
+                "subject": "🔔 Derniers jours pour renouveler votre abonnement RIMAREUM",
+                "template": "retention_3d",
+                "include_discount": True
+            },
+            "-1d": {
+                "subject": "⏰ Dernière chance - Votre abonnement RIMAREUM expire demain",
+                "template": "retention_1d",
+                "urgency": "high",
+                "include_one_click_renewal": True
+            }
+        }
+    },
+    "auto_upgrade_triggers": {
+        "high_engagement": {
+            "engagement_score": 0.8,
+            "usage_threshold": 0.9,
+            "suggest_upgrade": True
+        },
+        "feature_limit_reached": {
+            "products_limit_reached": True,
+            "ai_queries_limit_reached": True,
+            "suggest_upgrade": True
+        },
+        "loyalty_milestone": {
+            "months_subscribed": [6, 12, 24],
+            "suggest_upgrade": True,
+            "include_loyalty_discount": True
+        }
     }
 }
 
