@@ -84,7 +84,10 @@ app = FastAPI(
 )
 
 # PHASE 6 Security Middlewares
-app.add_middleware(HTTPSRedirectMiddleware)
+# Only enable HTTPS redirect in production
+if os.environ.get('ENVIRONMENT') == 'production':
+    app.add_middleware(HTTPSRedirectMiddleware)
+
 app.add_middleware(
     TrustedHostMiddleware, 
     allowed_hosts=["*"]  # Configure with your domain in production
