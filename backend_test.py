@@ -2329,6 +2329,19 @@ class RimareumAPITester:
         self.test_integration_with_existing_systems()
         self.test_error_handling_edge_cases()
         
+        # PHASE 11 MULTIVERS LOGIQUE TESTS
+        print("🌌 PHASE 11 MULTIVERS LOGIQUE TESTS")
+        print("-" * 40)
+        self.test_multivers_status_endpoint()
+        self.test_multivers_reality_selector()
+        self.test_multivers_ecosystems_list()
+        self.test_sanctuaire_initiation()
+        self.test_sanctuaire_vocal_transmission()
+        self.test_ceo_global_dashboard()
+        self.test_ceo_country_analytics()
+        self.test_phase11_rate_limiting()
+        self.test_phase11_compatibility_check()
+        
         # PHASE 9 PAYCORE TESTS
         print("🚀 PHASE 9 PAYCORE PRODUCTION-READY TESTS")
         print("-" * 40)
