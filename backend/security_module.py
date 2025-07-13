@@ -30,45 +30,174 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-# Configuration sécurité PHASE 6
+# Configuration sécurité PHASE 7 - SENTINEL CORE
 SECURITY_CONFIG = {
-    "max_requests_per_minute": 5,  # Réduit pour plus de sécurité
+    "max_requests_per_minute": 5,
     "max_requests_per_hour": 100,
-    "blocked_countries": [],  # Liste ISO codes pays bloqués
+    "blocked_countries": [],
     "allowed_countries": ["FR", "DZ", "AE"],  # France, Algérie, Dubaï
     "maintenance_mode": False,
-    "auto_ban_threshold": 5,  # Plus strict
-    "password_hash_rounds": 12,  # bcrypt rounds
-    "api_key_expiration_hours": 2,  # Expiration API keys
-    "audit_interval_hours": 24,  # Audit automatique
+    "auto_ban_threshold": 3,  # Plus strict pour Phase 7
+    "password_hash_rounds": 12,
+    "api_key_expiration_hours": 2,
+    "audit_interval_hours": 24,
+    "ml_model_update_interval": 3600,  # 1 heure
+    "continuous_monitoring": True,
+    "reactive_mode": True,
+    "gpt_security_enabled": True,
+    "multilingual_support": ["fr", "en", "ar", "es"],
+    "intelligence_level": "HIGH",
+    "auto_correction_enabled": True,
+    "threat_prediction_enabled": True,
+    "behavioral_learning_rate": 0.1,
     "suspicious_patterns": [
+        # SQL Injection patterns
         r"union\s+select",
-        r"<script[^>]*>",
+        r"select\s+.*\s+from",
+        r"insert\s+into",
+        r"update\s+.*\s+set",
+        r"delete\s+from",
+        r"drop\s+table",
+        r"create\s+table",
+        r"alter\s+table",
+        r"'.*or.*'.*=.*'",
+        r"'.*and.*'.*=.*'",
+        r"1\s*=\s*1",
+        r"1\s*=\s*0",
+        # XSS patterns
+        r"<script[^>]*>.*?</script>",
         r"javascript:",
+        r"on\w+\s*=",
         r"eval\s*\(",
         r"document\.cookie",
+        r"document\.write",
+        r"window\.location",
         r"alert\s*\(",
+        r"prompt\s*\(",
+        r"confirm\s*\(",
+        # Path traversal
         r"\.\.\/",
-        r"etc\/passwd",
+        r"\.\.\\",
+        r"\/etc\/passwd",
         r"\/proc\/",
+        r"\/var\/log\/",
+        # Command injection
         r"cmd\.exe",
         r"powershell",
-        r"base64_decode",
+        r"bash",
+        r"sh\s",
         r"system\s*\(",
         r"exec\s*\(",
+        r"passthru",
+        r"shell_exec",
+        # Advanced threats
+        r"base64_decode",
         r"phpinfo",
         r"wp-admin",
         r"admin\.php",
+        r"config\.php",
+        r"\.env",
+        r"\.git",
+        r"\.svn",
+        r"backup",
+        r"database",
+        r"logs",
+        r"tmp",
+        r"temp",
+        # LDAP injection
+        r"\(\|\(",
+        r"\)\|\)",
+        r"\*\)\(",
+        # NoSQL injection
+        r"{\s*\$where",
+        r"{\s*\$ne",
+        r"{\s*\$gt",
+        r"{\s*\$lt",
+        r"{\s*\$regex",
+        # XML injection
+        r"<\?xml",
+        r"<!DOCTYPE",
+        r"<!ENTITY",
+        # Server-side includes
+        r"<!--#exec",
+        r"<!--#include",
+        # Remote file inclusion
+        r"http://",
+        r"https://",
+        r"ftp://",
+        r"file://",
+        # Buffer overflow indicators
+        r"A{100,}",
+        r"0x[0-9a-fA-F]+",
+        # Advanced persistent threats
+        r"powershell\s+-enc",
+        r"certutil\s+-decode",
+        r"rundll32",
+        r"regsvr32",
+        r"wscript",
+        r"cscript",
+        r"mshta",
+        r"bitsadmin",
+        # Reconnaissance patterns
+        r"nmap",
+        r"sqlmap",
+        r"nikto",
+        r"dirb",
+        r"gobuster",
+        r"wfuzz",
+        r"burp",
+        r"zap",
+        r"metasploit",
+        r"msfconsole",
+        # Crypto mining
+        r"coinhive",
+        r"cryptonight",
+        r"stratum",
+        r"mining",
+        # Botnet patterns
+        r"botnet",
+        r"ddos",
+        r"slowloris",
+        r"hulk",
+        r"goldeneye"
     ],
     "bot_user_agents": [
         "bot", "crawler", "spider", "scraper", "wget", "curl",
         "python-requests", "libwww-perl", "java/", "go-http-client",
-        "scrapy", "beautifulsoup", "selenium", "phantomjs"
+        "scrapy", "beautifulsoup", "selenium", "phantomjs", "headless",
+        "automated", "test", "monitor", "check", "scan", "audit",
+        "attack", "hack", "exploit", "vulnerability", "penetration"
     ],
     "honeypot_endpoints": [
-        "/admin.php", "/wp-admin/", "/phpmyadmin/", "/.env",
-        "/config.php", "/backup/", "/database/", "/logs/"
-    ]
+        "/admin.php", "/wp-admin/", "/phpmyadmin/", "/.env", "/config.php",
+        "/backup/", "/database/", "/logs/", "/tmp/", "/temp/", "/.git/",
+        "/admin/", "/administrator/", "/manager/", "/webadmin/", "/console/",
+        "/api/admin/", "/api/config/", "/api/backup/", "/api/database/",
+        "/phpinfo.php", "/info.php", "/test.php", "/debug.php", "/shell.php",
+        "/admin/login", "/admin/dashboard", "/admin/users", "/admin/settings",
+        "/xmlrpc.php", "/wp-login.php", "/wp-config.php", "/readme.html",
+        "/license.txt", "/changelog.txt", "/install.php", "/setup.php"
+    ],
+    "high_risk_countries": ["CN", "RU", "KP", "IR", "IQ", "AF", "SY"],
+    "ml_threat_threshold": 0.8,
+    "gpt_analysis_threshold": 0.9,
+    "auto_block_duration": 86400,  # 24 heures
+    "escalation_threshold": 5,
+    "learning_mode_duration": 604800,  # 7 jours
+    "sentinel_response_time": 0.1,  # 100ms max response
+    "continuous_learning": True,
+    "threat_intelligence_update": 3600,  # 1 heure
+    "behavioral_baseline_update": 21600,  # 6 heures
+    "anomaly_detection_sensitivity": 0.05,
+    "adaptive_thresholds": True,
+    "predictive_blocking": True,
+    "real_time_analysis": True,
+    "deep_packet_inspection": True,
+    "session_anomaly_detection": True,
+    "credential_stuffing_detection": True,
+    "advanced_evasion_detection": True,
+    "zero_day_protection": True,
+    "threat_hunting_mode": True
 }
 
 @dataclass
