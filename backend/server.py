@@ -77,6 +77,15 @@ except ImportError:
                 "security_score": 95,
                 "generated_at": datetime.utcnow().isoformat()
             }
+        
+        async def get_threat_intelligence(self):
+            return {
+                "active_threats": 0,
+                "threat_level": "LOW",
+                "last_scan": datetime.utcnow().isoformat(),
+                "blocked_ips": 0,
+                "suspicious_activities": []
+            }
     
     limiter = None
     oauth2_scheme = None
