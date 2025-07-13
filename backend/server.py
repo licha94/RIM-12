@@ -23,11 +23,13 @@ import json
 import base64
 import bcrypt
 
-# Import du module de sécurité PHASE 6
+# Import du module de sécurité PHASE 7 - SENTINEL CORE
 try:
     from .security_module import (
         get_security_check, waf_instance, limiter, oauth2_scheme,
-        PasswordHasher, api_key_manager, audit_scheduler
+        PasswordHasher, api_key_manager, audit_scheduler,
+        ml_detector, gpt_assistant, multilingual_chatbot, 
+        continuous_monitor, EnhancedWAF
     )
 except ImportError:
     # Fallback si le module n'est pas trouvé
@@ -56,12 +58,37 @@ except ImportError:
         async def run_scheduled_audit(self):
             pass
     
+    class MockMultilingualChatbot:
+        def get_response(self, message: str, language: str = None):
+            return {
+                "message": "Bonjour! Je suis l'assistant RIMAREUM. Comment puis-je vous aider?",
+                "language": "fr",
+                "type": "greeting"
+            }
+        
+        def get_supported_languages(self):
+            return ["fr", "en", "ar", "es"]
+    
+    class MockGPTAssistant:
+        async def generate_security_report(self, time_period: str = "24h"):
+            return {
+                "period": time_period,
+                "total_threats": 0,
+                "security_score": 95,
+                "generated_at": datetime.utcnow().isoformat()
+            }
+    
     limiter = None
     oauth2_scheme = None
     waf_instance = MockWAF()
     PasswordHasher = MockPasswordHasher()
     api_key_manager = MockAPIKeyManager()
     audit_scheduler = MockAuditScheduler()
+    multilingual_chatbot = MockMultilingualChatbot()
+    gpt_assistant = MockGPTAssistant()
+    ml_detector = None
+    continuous_monitor = None
+    EnhancedWAF = MockWAF
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
