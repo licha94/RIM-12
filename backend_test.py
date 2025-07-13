@@ -570,8 +570,8 @@ class RimareumAPITester:
     
     def run_all_tests(self):
         """Run comprehensive test suite"""
-        print("🚀 Starting RIMAREUM Backend API Test Suite")
-        print("=" * 60)
+        print("🚀 Starting RIMAREUM Backend API Test Suite - PHASE 6 SECURITY")
+        print("=" * 70)
         print()
         
         # Core API Tests
@@ -579,6 +579,17 @@ class RimareumAPITester:
         print("-" * 30)
         self.test_root_endpoint()
         self.test_cors_configuration()
+        
+        # PHASE 6 Security Tests
+        print("🛡️ PHASE 6 SECURITY TESTS")
+        print("-" * 30)
+        self.test_security_status_endpoint()
+        self.test_user_registration()
+        self.test_user_login()
+        self.test_rate_limiting()
+        self.test_security_headers()
+        self.test_security_report_endpoint()
+        self.test_security_audit_endpoint()
         
         # Product Management Tests
         print("🛍️ PRODUCT MANAGEMENT TESTS")
@@ -617,9 +628,9 @@ class RimareumAPITester:
         self.test_malformed_requests()
         
         # Summary
-        print("=" * 60)
+        print("=" * 70)
         print("📋 TEST SUMMARY")
-        print("=" * 60)
+        print("=" * 70)
         
         passed = sum(1 for result in self.test_results if result['success'])
         total = len(self.test_results)
@@ -630,7 +641,7 @@ class RimareumAPITester:
         print(f"Success Rate: {(passed/total)*100:.1f}%")
         
         if passed == total:
-            print("\n🎉 ALL TESTS PASSED! Backend API is working correctly in simulation mode.")
+            print("\n🎉 ALL TESTS PASSED! Backend API with PHASE 6 Security is working correctly.")
         else:
             print(f"\n⚠️ {total - passed} tests failed. Check details above.")
         
