@@ -408,9 +408,22 @@ async def get_security_audit(
     """Audit de sécurité détaillé (admin uniquement)"""
     try:
         # Récupérer les événements de sécurité récents
-        recent_events = await db.security_events.find(
+        recent_events_cursor = db.security_events.find(
             {"timestamp": {"$gte": datetime.utcnow() - timedelta(hours=24)}}
-        ).sort("timestamp", -1).limit(100).to_list(100)
+        ).sort("timestamp", -1).limit(100)
+        
+        recent_events = []
+        async for event in recent_events_cursor:
+            # Convert ObjectId to string and clean up the event
+            event_dict = {
+                "event_type": event.get("event_type", ""),
+                "ip_address": event.get("ip_address", ""),
+                "risk_score": event.get("risk_score", 0.0),
+                "blocked": event.get("blocked", False),
+                "timestamp": event.get("timestamp", datetime.utcnow()).isoformat() if isinstance(event.get("timestamp"), datetime) else str(event.get("timestamp", "")),
+                "details": event.get("details", {})
+            }
+            recent_events.append(event_dict)
         
         # Statistiques
         total_events = len(recent_events)
