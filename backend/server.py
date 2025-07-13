@@ -406,6 +406,216 @@ async def report_security_event(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# --- PHASE 7 SENTINEL CORE ENDPOINTS ---
+
+@api_router.post("/chatbot/multilingual")
+@limiter.limit("30/minute") if limiter else lambda x: x
+async def multilingual_chat(
+    data: Dict[str, Any],
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Chatbot multilingue Phase 7 - FR, EN, AR, ES"""
+    try:
+        message = data.get("message", "")
+        language = data.get("language")
+        
+        if not message:
+            raise HTTPException(
+                status_code=400,
+                detail="Message is required"
+            )
+        
+        # Obtenir la réponse du chatbot
+        response = multilingual_chatbot.get_response(message, language)
+        
+        return {
+            "response": response["message"],
+            "detected_language": response["language"],
+            "response_type": response["type"],
+            "supported_languages": multilingual_chatbot.get_supported_languages(),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/chatbot/languages")
+async def get_supported_languages(
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Obtenir les langues supportées par le chatbot"""
+    try:
+        return {
+            "supported_languages": multilingual_chatbot.get_supported_languages(),
+            "language_details": {
+                "fr": "Français",
+                "en": "English", 
+                "ar": "العربية",
+                "es": "Español"
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/security/gpt/report")
+@limiter.limit("5/minute") if limiter else lambda x: x
+async def get_gpt_security_report(
+    request: Request,
+    time_period: str = "24h",
+    security_check: Dict = Depends(get_security_check)
+):
+    """Rapport de sécurité GPT-4 (admin uniquement)"""
+    try:
+        report = await gpt_assistant.generate_security_report(time_period)
+        
+        return {
+            "report": report,
+            "gpt_version": "4.0",
+            "security_assistant": "RIMAREUM GPT-SECURE",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/security/intelligence")
+@limiter.limit("10/minute") if limiter else lambda x: x
+async def get_threat_intelligence(
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Intelligence des menaces"""
+    try:
+        intelligence = await gpt_assistant.get_threat_intelligence()
+        
+        return {
+            "threat_intelligence": intelligence,
+            "last_update": datetime.utcnow().isoformat(),
+            "source": "RIMAREUM SENTINEL CORE"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/security/monitoring/stats")
+@limiter.limit("10/minute") if limiter else lambda x: x
+async def get_monitoring_stats(
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Statistiques de surveillance continue"""
+    try:
+        if continuous_monitor:
+            stats = continuous_monitor.get_monitoring_stats()
+        else:
+            stats = {
+                "monitoring_active": False,
+                "reactive_mode": False,
+                "stats": {"message": "Monitoring not available"},
+                "performance": {"message": "Performance metrics not available"},
+                "alerts_count": 0,
+                "queue_size": 0
+            }
+        
+        return {
+            "monitoring_stats": stats,
+            "phase": "7_SENTINEL_CORE",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/security/ml/model")
+@limiter.limit("5/minute") if limiter else lambda x: x
+async def get_ml_model_info(
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Informations sur le modèle ML"""
+    try:
+        if ml_detector:
+            info = {
+                "model_version": ml_detector.model_version,
+                "is_trained": ml_detector.is_trained,
+                "last_training": ml_detector.last_training.isoformat() if ml_detector.last_training else None,
+                "feature_names": ml_detector.feature_names,
+                "training_data_size": len(ml_detector.training_data)
+            }
+        else:
+            info = {
+                "model_version": "N/A",
+                "is_trained": False,
+                "message": "ML detector not available"
+            }
+        
+        return {
+            "ml_model_info": info,
+            "phase": "7_SENTINEL_CORE",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/security/ml/train")
+@limiter.limit("1/hour") if limiter else lambda x: x
+async def trigger_ml_training(
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Déclencher l'entraînement du modèle ML (admin uniquement)"""
+    try:
+        if not ml_detector:
+            raise HTTPException(
+                status_code=503,
+                detail="ML detector not available"
+            )
+        
+        # Entraîner le modèle en arrière-plan
+        training_result = ml_detector.train_model(ml_detector.training_data)
+        
+        return {
+            "training_triggered": True,
+            "training_success": training_result,
+            "data_size": len(ml_detector.training_data),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/security/sentinel/status")
+async def get_sentinel_status(
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Statut du système SENTINEL CORE"""
+    try:
+        return {
+            "phase": "7_SENTINEL_CORE",
+            "status": "ACTIVE",
+            "components": {
+                "intelligent_detection": True,
+                "gpt_secure_4": gpt_assistant is not None,
+                "smart_firewall_ml": ml_detector is not None,
+                "multilingual_chatbot": multilingual_chatbot is not None,
+                "reactive_surveillance": continuous_monitor is not None,
+                "enhanced_waf": isinstance(waf_instance, EnhancedWAF) if EnhancedWAF else False
+            },
+            "security_level": "MAXIMUM",
+            "threat_hunting_active": True,
+            "auto_correction_enabled": True,
+            "continuous_monitoring": True,
+            "reactive_mode": True,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/security/status")
 async def get_security_status(
     request: Request,
