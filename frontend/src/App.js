@@ -1556,15 +1556,68 @@ const Footer = () => {
   );
 };
 
-// Composant Chat AI Flottant
+// Composant Chat AI Flottant avec IA Vocale
 const FloatingAIChat = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: "assistant", content: "🤖 Salut ! Je suis l'IA RIMAREUM. Comment puis-je t'aider ?" }
+    { role: "assistant", content: "🤖 Salut ! Je suis l'IA RIMAREUM. Tu peux me parler ou m'écrire !" }
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId] = useState(() => Math.random().toString(36).substr(2, 9));
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+
+  // Vérification support vocal
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      setVoiceSupported(true);
+    }
+  }, []);
+
+  const startVoiceRecognition = () => {
+    if (!voiceSupported) {
+      alert("Reconnaissance vocale non supportée sur ce navigateur");
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.lang = 'fr-FR';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInputMessage(transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      alert("Erreur de reconnaissance vocale");
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
+  const speakResponse = (text) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'fr-FR';
+      utterance.rate = 0.9;
+      speechSynthesis.speak(utterance);
+    }
+  };
 
   const sendMessage = async () => {
     if (!inputMessage.trim()) return;
@@ -1582,6 +1635,9 @@ const FloatingAIChat = () => {
 
       const aiMessage = { role: "assistant", content: response.data.response };
       setMessages(prev => [...prev, aiMessage]);
+      
+      // Synthèse vocale automatique
+      speakResponse(response.data.response);
     } catch (error) {
       console.error("Erreur de chat:", error);
       const errorMessage = { 
@@ -1589,6 +1645,7 @@ const FloatingAIChat = () => {
         content: "⚡ Mode simulation activé ! Pose-moi des questions sur RIMAREUM, crypto, NFT ou DAO !" 
       };
       setMessages(prev => [...prev, errorMessage]);
+      speakResponse(errorMessage.content);
     } finally {
       setLoading(false);
     }
@@ -1611,7 +1668,7 @@ const FloatingAIChat = () => {
         </button>
       )}
 
-      {/* Interface Chat */}
+      {/* Interface Chat avec IA Vocale */}
       {isOpen && (
         <div 
           className="w-96 h-96 bg-black/90 backdrop-blur-lg rounded-lg shadow-2xl border border-cyan-500/50"
@@ -1666,7 +1723,7 @@ const FloatingAIChat = () => {
             )}
           </div>
 
-          {/* Input */}
+          {/* Input avec IA Vocale */}
           <div className="p-4 border-t border-cyan-500/30">
             <div className="flex space-x-2">
               <input
@@ -1674,13 +1731,30 @@ const FloatingAIChat = () => {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                placeholder="Pose ta question à RIMAREUM..."
+                placeholder="Parle ou écris à RIMAREUM..."
                 className="flex-1 bg-gray-800 text-cyan-400 px-3 py-2 rounded border border-cyan-500/30 focus:outline-none focus:border-cyan-400 placeholder-gray-500"
                 style={{
                   textShadow: '0 0 5px rgba(0, 240, 255, 0.3)'
                 }}
                 disabled={loading}
               />
+              
+              {/* Bouton Micro */}
+              {voiceSupported && (
+                <button
+                  onClick={startVoiceRecognition}
+                  disabled={loading || isListening}
+                  className={`px-3 py-2 rounded transition-all duration-300 ${
+                    isListening 
+                      ? 'bg-red-500 text-white animate-pulse' 
+                      : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                  title="Reconnaissance vocale"
+                >
+                  🎤
+                </button>
+              )}
+              
               <button
                 onClick={sendMessage}
                 disabled={loading || !inputMessage.trim()}
@@ -1708,6 +1782,13 @@ const FloatingAIChat = () => {
                 </button>
               ))}
             </div>
+
+            {/* Indicateur vocal */}
+            {isListening && (
+              <div className="mt-2 text-center">
+                <span className="text-red-400 text-sm animate-pulse">🎤 Écoute en cours... Dites "RIMAREUM" pour commencer</span>
+              </div>
+            )}
           </div>
         </div>
       )}
