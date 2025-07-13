@@ -198,9 +198,12 @@ class RimareumAPITester:
         
         try:
             product_id = self.sample_products[0]['id']
+            product_price = self.sample_products[0]['price']
             payload = {
                 "product_id": product_id,
-                "quantity": 1
+                "amount": product_price,
+                "currency": "USD",
+                "payment_method": "card"
             }
             response = self.session.post(f"{BACKEND_URL}/payments/checkout/session", json=payload)
             
