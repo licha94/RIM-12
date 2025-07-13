@@ -163,6 +163,8 @@ const Header = () => {
 
 // Home Page
 const HomePage = () => {
+  const { setCurrentPage } = useApp();
+  
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -184,10 +186,16 @@ const HomePage = () => {
             and experience AI-powered assistance in our quantum marketplace.
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 py-4 rounded-lg font-semibold transition shadow-lg">
+            <button 
+              onClick={() => setCurrentPage('products')}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 py-4 rounded-lg font-semibold transition shadow-lg"
+            >
               Explore Products
             </button>
-            <button className="border-2 border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white px-8 py-4 rounded-lg font-semibold transition">
+            <button 
+              onClick={() => setCurrentPage('dao')}
+              className="border-2 border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white px-8 py-4 rounded-lg font-semibold transition"
+            >
               Join DAO
             </button>
           </div>
