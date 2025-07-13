@@ -450,10 +450,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "PHASE 6 - Backend Security Middleware"
-    - "PHASE 6 - Database Security Enhancement"
-    - "PHASE 6 - Anti-Bot & IP Blocking System"
-    - "PHASE 6 - RIMAREUM GUARDIAN AI"
     - "PHASE 6 - Frontend Security Hardening"
     - "PHASE 6 - Production Build Configuration"
     - "PHASE 6 - Client-Side Security Integration"
