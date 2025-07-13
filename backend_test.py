@@ -72,7 +72,9 @@ class RimareumAPITester:
                 'access-control-allow-headers': response.headers.get('access-control-allow-headers')
             }
             
-            if cors_headers['access-control-allow-origin'] == '*':
+            # CORS is working if it returns the requesting origin or *
+            allow_origin = cors_headers['access-control-allow-origin']
+            if allow_origin == '*' or allow_origin == 'https://example.com':
                 self.log_test("CORS Configuration", True, "CORS properly configured", cors_headers)
                 return True
             else:
