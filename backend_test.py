@@ -873,23 +873,22 @@ class RimareumAPITester:
         try:
             response = self.session.post(f"{BACKEND_URL}/security/ml/train", json={})
             
-            # Expect either success (200) or service unavailable (503) in fallback mode
+            # Expect success (200) in both real and fallback mode
             if response.status_code == 200:
                 data = response.json()
                 required_fields = ['training_triggered', 'timestamp']
                 if all(field in data for field in required_fields):
-                    self.log_test("ML Training Trigger", True, "ML training triggered successfully", data)
-                    return True
+                    if data.get('training_triggered') == False and "fallback mode" in data.get('message', ''):
+                        self.log_test("ML Training Trigger", True, "ML training unavailable in fallback mode (expected)", data)
+                        return True
+                    elif data.get('training_triggered') == True:
+                        self.log_test("ML Training Trigger", True, "ML training triggered successfully", data)
+                        return True
+                    else:
+                        self.log_test("ML Training Trigger", False, "Unexpected training response", data)
+                        return False
                 else:
                     self.log_test("ML Training Trigger", False, "Missing training response fields", data)
-                    return False
-            elif response.status_code == 503:
-                data = response.json()
-                if "ML detector not available" in data.get("detail", ""):
-                    self.log_test("ML Training Trigger", True, "ML training unavailable (expected in fallback mode)", data)
-                    return True
-                else:
-                    self.log_test("ML Training Trigger", False, "Unexpected error message", data)
                     return False
             else:
                 self.log_test("ML Training Trigger", False, f"Status: {response.status_code}")
