@@ -100,6 +100,39 @@ except ImportError:
         
         async def get_categories(self):
             return {}
+        
+        async def search_products(self, search_term, category=None):
+            return []
+        
+        async def add_to_cart(self, cart_id, product_id, quantity):
+            return True
+        
+        async def get_cart(self, cart_id):
+            return {"id": cart_id, "items": [], "total_price": 0.0}
+        
+        class MockAIAssistant:
+            async def get_product_recommendations(self, product_id):
+                return []
+            
+            async def analyze_cart_for_upselling(self, cart):
+                return []
+            
+            async def get_cross_sell_suggestions(self, cart):
+                return []
+            
+            async def generate_personalized_response(self, message, language, cart=None):
+                return {
+                    "message": "Mock AI response",
+                    "language": language,
+                    "response_type": "mock"
+                }
+        
+        def __init__(self):
+            self.ai_assistant = self.MockAIAssistant()
+            self.qr_generator = self
+        
+        def generate_product_qr(self, product_id):
+            return f"mock_qr_code_{product_id}"
     
     limiter = None
     oauth2_scheme = None
@@ -112,6 +145,7 @@ except ImportError:
     ml_detector = None
     continuous_monitor = None
     EnhancedWAF = MockWAF
+    smart_commerce = MockSmartCommerce()
 # Import du module PAYCORE PHASE 9
 try:
     from .paycore import (
