@@ -25,33 +25,80 @@ SUBSCRIPTION_CONFIG = {
     "grace_period_days": 7,
     "supported_currencies": ["EUR", "USD", "ETH", "USDT", "RIMAR"],
     "subscription_plans": {
-        "bronze": {
-            "name": "Bronze RIMAREUM",
-            "price_eur": 9.99,
+        "explorateur_basic": {
+            "id": "explorateur_basic",
+            "title": "Abonné Explorateur",
+            "name": "Explorateur Basic RIMAREUM",
+            "price": 9.99,
+            "currency": "EUR",
+            "frequency": "monthly",
             "price_crypto": {"ETH": 0.004, "USDT": 10.0, "RIMAR": 20},
-            "features": ["Accès de base", "Support email", "1 produit/mois"],
-            "tier_points": 100
+            "features": [
+                "Accès aux produits de base",
+                "IA assistant simplifié", 
+                "Newsletters stratégiques"
+            ],
+            "tier_points": 100,
+            "max_products_per_month": 1,
+            "support_level": "email",
+            "ai_level": "basic"
         },
-        "silver": {
-            "name": "Silver RIMAREUM", 
-            "price_eur": 29.99,
+        "gardien_premium": {
+            "id": "gardien_premium", 
+            "title": "Gardien RIMAREUM",
+            "name": "Gardien Premium RIMAREUM",
+            "price": 29.99,
+            "currency": "EUR", 
+            "frequency": "monthly",
             "price_crypto": {"ETH": 0.012, "USDT": 30.0, "RIMAR": 60},
-            "features": ["Accès étendu", "Support prioritaire", "5 produits/mois", "IA Assistant"],
-            "tier_points": 300
+            "features": [
+                "Livraison prioritaire",
+                "NFT bonus de soutien",
+                "Support IA élargi"
+            ],
+            "tier_points": 300,
+            "max_products_per_month": 5,
+            "support_level": "priority",
+            "ai_level": "premium"
         },
-        "gold": {
-            "name": "Gold RIMAREUM",
-            "price_eur": 79.99,
-            "price_crypto": {"ETH": 0.032, "USDT": 80.0, "RIMAR": 160},
-            "features": ["Accès premium", "Support 24/7", "Produits illimités", "IA Advanced", "NFT mensuel"],
-            "tier_points": 800
+        "maitre_cristal": {
+            "id": "maitre_cristal",
+            "title": "Maître Cristal Δ144", 
+            "name": "Maître Cristal Δ144 RIMAREUM",
+            "price": 88.88,
+            "currency": "EUR",
+            "frequency": "monthly", 
+            "price_crypto": {"ETH": 0.035, "USDT": 89.0, "RIMAR": 178},
+            "features": [
+                "IA Quantum Pro",
+                "Coaching IA personnalisé",
+                "NFT collector Δ144"
+            ],
+            "tier_points": 800,
+            "max_products_per_month": 999,
+            "support_level": "24/7",
+            "ai_level": "quantum_pro"
         },
-        "platinum": {
-            "name": "Platinum RIMAREUM",
-            "price_eur": 199.99,
-            "price_crypto": {"ETH": 0.08, "USDT": 200.0, "RIMAR": 400},
-            "features": ["Accès VIP", "Support dédié", "Tout illimité", "IA Expert", "NFT exclusifs", "Événements privés"],
-            "tier_points": 2000
+        "architecte_nadjibien": {
+            "id": "architecte_nadjibien",
+            "title": "Architecte Nadjibien",
+            "name": "Architecte Nadjibien RIMAREUM", 
+            "price": 444.44,
+            "currency": "EUR",
+            "frequency": "yearly",
+            "price_crypto": {"ETH": 0.18, "USDT": 444.0, "RIMAR": 888},
+            "features": [
+                "Accès complet DAO",
+                "Artefacts sacrés",
+                "Préventes & gouvernance RIMAREUM"
+            ],
+            "tier_points": 5000,
+            "max_products_per_month": 999,
+            "support_level": "dedicated",
+            "ai_level": "nadjibien_master",
+            "dao_access": True,
+            "governance_rights": True,
+            "sacred_artifacts": True
         }
     },
     "churn_risk_factors": {
