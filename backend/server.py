@@ -312,9 +312,9 @@ db = client[os.environ['DB_NAME']]
 
 # Create the main app without a prefix
 app = FastAPI(
-    title="RIMAREUM API - PHASE 6 SECURED", 
-    description="Revolutionary E-commerce & Crypto Platform with Advanced Security",
-    version="6.0.0"
+    title="RIMAREUM API - PHASE 11 MULTIVERS LOGIQUE", 
+    description="Universal Platform for Exchange, Governance, AI, and Economic Sovereignty - V11 Cosmic Edition",
+    version="11.0.0"
 )
 
 # PHASE 6 Security Middlewares
