@@ -570,49 +570,84 @@ async def get_wallet_balance(
 
 # --- AI CHAT ROUTES ---
 
+# --- AI CHAT ROUTES ---
+
 @api_router.post("/chat/message")
-async def send_chat_message(
-    data: dict,
-    current_user: Optional[User] = Depends(get_current_user)
+@limiter.limit("20/minute") if limiter else lambda x: x
+async def chat_message(
+    message_data: Dict[str, Any],
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
 ):
-    """Send message to AI assistant"""
-    global openai_chat
-    if not openai_chat:
-        raise HTTPException(status_code=503, detail="AI service not configured")
-    
+    """Send message to AI chat"""
     try:
-        session_id = data.get("session_id", str(uuid.uuid4()))
-        message = data.get("message", "")
+        if not openai_chat:
+            raise HTTPException(
+                status_code=503,
+                detail="AI service not configured"
+            )
         
-        # Create new chat instance for this session
-        chat = LlmChat(
-            api_key=os.environ.get("OPENAI_API_KEY"),
-            session_id=session_id,
-            system_message="You are RIMAREUM's AI assistant. Help users with e-commerce, crypto, and DAO questions. Be knowledgeable about blockchain, NFTs, and digital commerce."
-        ).with_model("openai", "gpt-4o")
+        session_id = message_data.get("session_id")
+        user_message = message_data.get("message")
         
-        user_message = UserMessage(text=message)
-        response = await chat.send_message(user_message)
+        if not session_id or not user_message:
+            raise HTTPException(
+                status_code=400,
+                detail="session_id and message are required"
+            )
         
-        # Store chat history
-        chat_record = ChatMessage(
-            session_id=session_id,
-            user_id=current_user.id if current_user else None,
-            message=message,
-            response=response
+        # Get or create chat session
+        session = await db.chat_sessions.find_one({"session_id": session_id})
+        if not session:
+            session = ChatSession(session_id=session_id)
+            await db.chat_sessions.insert_one(session.dict())
+        
+        # Add user message to session
+        user_chat_message = ChatMessage(role="user", content=user_message)
+        
+        # Get AI response
+        ai_message = UserMessage(content=user_message)
+        response = await openai_chat.send_message(ai_message)
+        
+        # Add AI response to session
+        ai_chat_message = ChatMessage(role="assistant", content=response.content)
+        
+        # Update session with both messages
+        await db.chat_sessions.update_one(
+            {"session_id": session_id},
+            {
+                "$push": {"messages": {"$each": [user_chat_message.dict(), ai_chat_message.dict()]}},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
         )
-        await db.chat_messages.insert_one(chat_record.dict())
         
-        return {"response": response, "session_id": session_id}
+        return {
+            "session_id": session_id,
+            "message": user_message,
+            "response": response.content,
+            "timestamp": datetime.utcnow().isoformat()
+        }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.get("/chat/history/{session_id}")
-async def get_chat_history(session_id: str):
-    """Get chat history for a session"""
-    messages = await db.chat_messages.find({"session_id": session_id}).to_list(100)
-    return [ChatMessage(**msg) for msg in messages]
+@api_router.get("/chat/sessions/{session_id}")
+@limiter.limit("60/minute") if limiter else lambda x: x
+async def get_chat_session(
+    session_id: str,
+    request: Request,
+    security_check: Dict = Depends(get_security_check)
+):
+    """Get chat session history"""
+    try:
+        session = await db.chat_sessions.find_one({"session_id": session_id})
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        return ChatSession(**session)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- ADMIN ROUTES ---
 
