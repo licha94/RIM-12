@@ -106,6 +106,25 @@ SUBSCRIPTION_CONFIG = {
         "support_tickets": 3,
         "payment_failures": 2,
         "feature_usage_decline": 0.3
+    },
+    "bonus_nft": {
+        "default": "NFT_PILIER_RIMAREUM",
+        "mint_on_subscription": True,
+        "chain": "Polygon",
+        "utility": "Accès Dashboard Premium + Discord Secret",
+        "contract_address": "0x742d35Cc6634C0532925a3b8D0Bb19d02c945C8d",
+        "collection_name": "RIMAREUM Pilier Collection",
+        "symbol": "RPILIER",
+        "metadata_base_uri": "https://rimareum.com/nft/pilier/",
+        "royalty_percentage": 5.0,
+        "creator_address": "0x1234567890123456789012345678901234567890",
+        "minting_cost_matic": 0.01,
+        "special_traits": {
+            "explorateur_basic": ["Explorateur", "Bronze Pilier"],
+            "gardien_premium": ["Gardien", "Silver Pilier", "Priority Access"],
+            "maitre_cristal": ["Maître", "Crystal Δ144", "Quantum Access"],
+            "architecte_nadjibien": ["Architecte", "Nadjibien Master", "DAO Governor", "Sacred Access"]
+        }
     }
 }
 
