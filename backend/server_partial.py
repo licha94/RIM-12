@@ -79,7 +79,7 @@ SAMPLE_PRODUCTS = [
 ]
 
 # Initialize products on startup
-@api_router.on_event("startup")
+@app.on_event("startup")
 async def startup_event():
     """Initialize application data"""
     global products_db
@@ -281,14 +281,14 @@ async def get_security_audit():
 app.include_router(api_router)
 
 # Error handlers
-@api_router.exception_handler(404)
+@app.exception_handler(404)
 async def not_found_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=404,
         content={"detail": "Endpoint not found", "path": str(request.url.path)}
     )
 
-@api_router.exception_handler(500)
+@app.exception_handler(500)
 async def internal_error_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
@@ -297,7 +297,7 @@ async def internal_error_handler(request: Request, exc: Exception):
 
 # --- PHASE 7 SENTINEL CORE ENDPOINTS ---
 
-@api_router.get("/security/sentinel/status")
+@app.get("/security/sentinel/status")
 async def get_sentinel_status():
     """Get Sentinel Core status"""
     return {
@@ -314,7 +314,7 @@ async def get_sentinel_status():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.post("/chatbot/multilingual")
+@app.post("/chatbot/multilingual")
 async def multilingual_chatbot(chat_data: Dict[str, Any]):
     """Multilingual chatbot"""
     language = chat_data.get("language", "en")
@@ -335,7 +335,7 @@ async def multilingual_chatbot(chat_data: Dict[str, Any]):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.get("/chatbot/languages")
+@app.get("/chatbot/languages")
 async def get_supported_languages():
     """Get supported languages"""
     return {
@@ -349,7 +349,7 @@ async def get_supported_languages():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.get("/security/gpt/report")
+@app.get("/security/gpt/report")
 async def get_gpt_security_report(time_period: str = "24h"):
     """Get GPT-4 security report"""
     return {
@@ -361,7 +361,7 @@ async def get_gpt_security_report(time_period: str = "24h"):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.get("/security/intelligence")
+@app.get("/security/intelligence")
 async def get_threat_intelligence():
     """Get threat intelligence data"""
     return {
@@ -375,7 +375,7 @@ async def get_threat_intelligence():
         "confidence_level": "HIGH"
     }
 
-@api_router.get("/security/monitoring/stats")
+@app.get("/security/monitoring/stats")
 async def get_monitoring_stats():
     """Get continuous monitoring stats"""
     return {
@@ -389,7 +389,7 @@ async def get_monitoring_stats():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.get("/security/ml/model")
+@app.get("/security/ml/model")
 async def get_ml_model_info():
     """Get ML model information"""
     return {
@@ -403,7 +403,7 @@ async def get_ml_model_info():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.post("/security/ml/train")
+@app.post("/security/ml/train")
 async def trigger_ml_training():
     """Trigger ML model training"""
     return {
@@ -414,7 +414,7 @@ async def trigger_ml_training():
 
 # --- PHASE 8 SMART COMMERCE ENDPOINTS ---
 
-@api_router.get("/shop/status")
+@app.get("/shop/status")
 async def get_shop_status():
     """Get smart commerce status"""
     return {
@@ -430,7 +430,7 @@ async def get_shop_status():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.get("/shop/products")
+@app.get("/shop/products")
 async def get_shop_products():
     """Get shop products"""
     return {
@@ -439,7 +439,7 @@ async def get_shop_products():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.get("/shop/categories")
+@app.get("/shop/categories")
 async def get_shop_categories():
     """Get product categories"""
     categories = list(set(p["category"] for p in products_db))
@@ -449,7 +449,7 @@ async def get_shop_categories():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.post("/shop/cart/create")
+@app.post("/shop/cart/create")
 async def create_cart():
     """Create shopping cart"""
     cart_id = str(uuid.uuid4())
@@ -469,7 +469,7 @@ async def create_cart():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.post("/shop/cart/{cart_id}/add")
+@app.post("/shop/cart/{cart_id}/add")
 async def add_to_cart(cart_id: str, item_data: Dict[str, Any]):
     """Add item to cart"""
     if cart_id not in carts_db:
@@ -502,7 +502,7 @@ async def add_to_cart(cart_id: str, item_data: Dict[str, Any]):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.get("/shop/cart/{cart_id}")
+@app.get("/shop/cart/{cart_id}")
 async def get_cart(cart_id: str):
     """Get cart details"""
     if cart_id not in carts_db:
@@ -510,7 +510,7 @@ async def get_cart(cart_id: str):
     
     return carts_db[cart_id]
 
-@api_router.post("/shop/assistant")
+@app.post("/shop/assistant")
 async def shop_assistant(request_data: Dict[str, Any]):
     """AI shopping assistant"""
     language = request_data.get("language", "en")
@@ -533,7 +533,7 @@ async def shop_assistant(request_data: Dict[str, Any]):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.get("/shop/qrcode/{product_id}")
+@app.get("/shop/qrcode/{product_id}")
 async def generate_qr_code(product_id: str):
     """Generate QR code for product"""
     product = next((p for p in products_db if p["id"] == product_id), None)
@@ -552,7 +552,7 @@ async def generate_qr_code(product_id: str):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.post("/shop/checkout")
+@app.post("/shop/checkout")
 async def checkout(checkout_data: Dict[str, Any]):
     """Process checkout"""
     cart_id = checkout_data.get("cart_id")
@@ -589,7 +589,7 @@ async def checkout(checkout_data: Dict[str, Any]):
 
 # --- PHASE 11 MULTIVERS ENDPOINTS ---
 
-@api_router.get("/multiverse/state")
+@app.get("/multiverse/state")
 async def get_multiverse_state():
     """Get multiverse state"""
     return {
@@ -602,7 +602,7 @@ async def get_multiverse_state():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.post("/multiverse/switch")
+@app.post("/multiverse/switch")
 async def multiverse_switch(switch_data: Dict[str, Any]):
     """Switch multiverse dimension"""
     user_id = switch_data.get("user_id")
@@ -617,7 +617,7 @@ async def multiverse_switch(switch_data: Dict[str, Any]):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.post("/multiverse/sync")
+@app.post("/multiverse/sync")
 async def multiverse_sync():
     """Sync multiverse data"""
     return {
@@ -628,7 +628,7 @@ async def multiverse_sync():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.post("/sanctuary/input")
+@app.post("/sanctuary/input")
 async def sanctuary_input(input_data: Dict[str, Any]):
     """Sanctuary IA-Humain input"""
     user_id = input_data.get("user_id")
@@ -643,7 +643,7 @@ async def sanctuary_input(input_data: Dict[str, Any]):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.post("/sanctuary/feedback")
+@app.post("/sanctuary/feedback")
 async def sanctuary_feedback(feedback_data: Dict[str, Any]):
     """Sanctuary feedback"""
     session_id = feedback_data.get("session_id")
@@ -659,7 +659,7 @@ async def sanctuary_feedback(feedback_data: Dict[str, Any]):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.post("/voice/trigger")
+@app.post("/voice/trigger")
 async def voice_trigger(trigger_data: Dict[str, Any]):
     """Voice trigger interface"""
     return {
@@ -670,7 +670,7 @@ async def voice_trigger(trigger_data: Dict[str, Any]):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.get("/ceo/dashboard")
+@app.get("/ceo/dashboard")
 async def ceo_dashboard(admin_key: Optional[str] = None):
     """CEO Dashboard"""
     if not admin_key or admin_key != "Δ144-RIMAREUM-OMEGA":
@@ -703,7 +703,7 @@ async def ceo_dashboard(admin_key: Optional[str] = None):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.get("/ceo/analytics")
+@app.get("/ceo/analytics")
 async def ceo_analytics(admin_key: Optional[str] = None, zone_filter: Optional[str] = None):
     """CEO Analytics"""
     if not admin_key or admin_key != "Δ144-RIMAREUM-OMEGA":
@@ -721,7 +721,7 @@ async def ceo_analytics(admin_key: Optional[str] = None, zone_filter: Optional[s
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.get("/global/status")
+@app.get("/global/status")
 async def global_status():
     """Global system status"""
     return {
@@ -734,7 +734,7 @@ async def global_status():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@api_router.post("/subscriptions/create")
+@app.post("/subscriptions/create")
 async def create_subscription(subscription_data: Dict[str, Any]):
     """Create V11.0 subscription"""
     plan_type = subscription_data.get("plan_type", "basic")
@@ -757,14 +757,14 @@ async def create_subscription(subscription_data: Dict[str, Any]):
     }
 
 # Error handlers
-@api_router.exception_handler(404)
+@app.exception_handler(404)
 async def not_found_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=404,
         content={"detail": "Endpoint not found", "path": str(request.url.path)}
     )
 
-@api_router.exception_handler(500)
+@app.exception_handler(500)
 async def internal_error_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
