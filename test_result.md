@@ -672,7 +672,13 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "PHASE 9 - Production Payment Systems"
+    - "PHASE 9 - External Shop Synchronization"
+    - "PHASE 9 - Enhanced Security Module"
+    - "PHASE 9 - Commerce Backoffice"
+    - "PHASE 9 - Real-time Alerts System"
+    - "PHASE 9 - AI Customer Tracking"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
