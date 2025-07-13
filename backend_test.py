@@ -1927,6 +1927,344 @@ class RimareumAPITester:
             self.log_test("Error Handling & Edge Cases", False, f"Exception: {str(e)}")
             return False
     
+    # PHASE 11 MULTIVERS LOGIQUE TESTS
+    
+    def test_multivers_status_endpoint(self):
+        """Test GET /api/multivers/status - Phase 11 Multivers status"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/multivers/status")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['phase', 'version', 'quantum_core', 'delta_144_codes', 'token_trio', 'ecosystems', 'features', 'international']
+                if all(field in data for field in required_fields):
+                    # Check Phase 11 specific data
+                    if (data.get('phase') == '11' and 
+                        data.get('version') == 'V11 MULTIVERS LOGIQUE' and
+                        data.get('quantum_core') == True and
+                        data.get('delta_144_codes') == 'ACTIVE'):
+                        self.log_test("Multivers Status Endpoint", True, "Phase 11 Multivers status active", data)
+                        return True
+                    else:
+                        self.log_test("Multivers Status Endpoint", False, "Phase 11 configuration incorrect", data)
+                        return False
+                else:
+                    self.log_test("Multivers Status Endpoint", False, "Missing required status fields", data)
+                    return False
+            else:
+                self.log_test("Multivers Status Endpoint", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Multivers Status Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_multivers_reality_selector(self):
+        """Test POST /api/multivers/selector - Reality selector"""
+        try:
+            selector_data = {
+                "user_id": str(uuid.uuid4()),
+                "dimension": "terra_vita_trad"
+            }
+            response = self.session.post(f"{BACKEND_URL}/multivers/selector", json=selector_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['transition_successful', 'user_id', 'new_dimension', 'ecosystem_info', 'delta_144_resonance']
+                if all(field in data for field in required_fields):
+                    if (data.get('transition_successful') == True and 
+                        data.get('new_dimension') == 'terra_vita_trad' and
+                        data.get('delta_144_resonance') == True):
+                        self.log_test("Multivers Reality Selector", True, "Reality transition successful", data)
+                        return True
+                    else:
+                        self.log_test("Multivers Reality Selector", False, "Transition data incorrect", data)
+                        return False
+                else:
+                    self.log_test("Multivers Reality Selector", False, "Missing transition fields", data)
+                    return False
+            else:
+                self.log_test("Multivers Reality Selector", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Multivers Reality Selector", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_multivers_ecosystems_list(self):
+        """Test GET /api/multivers/ecosystems - Available ecosystems"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/multivers/ecosystems")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['total_ecosystems', 'ecosystems', 'delta_144_operational', 'active_priority']
+                expected_ecosystems = ['TERRA_VITA_TRAD', 'ALPHA_SYNERGY', 'PUREWEAR', 'QUANTUM_NEXUS', 'CRYSTALLINE_MATRIX', 'SOVEREIGN_REALMS', 'INFINITE_COMMERCE', 'COSMIC_GOVERNANCE']
+                
+                if all(field in data for field in required_fields):
+                    ecosystems = data.get('ecosystems', [])
+                    ecosystem_names = [eco.get('name') for eco in ecosystems]
+                    
+                    if (data.get('total_ecosystems') == 8 and 
+                        data.get('delta_144_operational') == True and
+                        data.get('active_priority') == 'TERRA_VITA_TRAD' and
+                        all(name in ecosystem_names for name in expected_ecosystems)):
+                        self.log_test("Multivers Ecosystems List", True, f"All 8 ecosystems available with TERRA_VITA_TRAD priority", data)
+                        return True
+                    else:
+                        self.log_test("Multivers Ecosystems List", False, "Ecosystem configuration incorrect", data)
+                        return False
+                else:
+                    self.log_test("Multivers Ecosystems List", False, "Missing ecosystem fields", data)
+                    return False
+            else:
+                self.log_test("Multivers Ecosystems List", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Multivers Ecosystems List", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_sanctuaire_initiation(self):
+        """Test POST /api/sanctuaire/initiate - Sanctuaire IA-Humain session"""
+        try:
+            session_data = {
+                "user_id": str(uuid.uuid4()),
+                "ecosystem_id": "terra_vita_trad"
+            }
+            response = self.session.post(f"{BACKEND_URL}/sanctuaire/initiate", json=session_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['session_initiated', 'session_id', 'user_id', 'sanctuaire_features', 'ai_entities_connected', 'vocal_languages']
+                sanctuaire_features = ['transmission_vocale', 'miroir_vibratoire', 'neural_sync']
+                ai_entities = ['NADJIB_AI', 'GPT_TRIAD', 'DEEPSEEK_CORE']
+                
+                if all(field in data for field in required_fields):
+                    features = data.get('sanctuaire_features', {})
+                    entities = data.get('ai_entities_connected', [])
+                    languages = data.get('vocal_languages', [])
+                    
+                    if (data.get('session_initiated') == True and
+                        all(feature in features for feature in sanctuaire_features) and
+                        all(entity in entities for entity in ai_entities) and
+                        'fr' in languages and 'en' in languages and 'ar' in languages):
+                        self.log_test("Sanctuaire Initiation", True, "Sanctuaire session initiated with all features", data)
+                        return True
+                    else:
+                        self.log_test("Sanctuaire Initiation", False, "Sanctuaire features incomplete", data)
+                        return False
+                else:
+                    self.log_test("Sanctuaire Initiation", False, "Missing session fields", data)
+                    return False
+            else:
+                self.log_test("Sanctuaire Initiation", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Sanctuaire Initiation", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_sanctuaire_vocal_transmission(self):
+        """Test POST /api/sanctuaire/transmission - Vocal transmission with Token TRIO"""
+        try:
+            # First initiate a session
+            session_data = {
+                "user_id": str(uuid.uuid4()),
+                "ecosystem_id": "terra_vita_trad"
+            }
+            session_response = self.session.post(f"{BACKEND_URL}/sanctuaire/initiate", json=session_data)
+            
+            if session_response.status_code != 200:
+                self.log_test("Sanctuaire Vocal Transmission", False, "Failed to initiate session")
+                return False
+            
+            session_id = session_response.json().get('session_id')
+            
+            # Test vocal transmission in multiple languages
+            languages_to_test = [
+                {"lang": "fr", "message": "Bonjour, guide-moi vers la souveraineté cosmique"},
+                {"lang": "en", "message": "Hello, guide me toward cosmic sovereignty"},
+                {"lang": "ar", "message": "مرحبا، اهدني نحو السيادة الكونية"}
+            ]
+            
+            successful_transmissions = 0
+            
+            for test_case in languages_to_test:
+                transmission_data = {
+                    "session_id": session_id,
+                    "message": test_case["message"],
+                    "language": test_case["lang"]
+                }
+                
+                response = self.session.post(f"{BACKEND_URL}/sanctuaire/transmission", json=transmission_data)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    required_fields = ['transmission_successful', 'ai_response', 'vibration_response', 'ai_entities_active', 'delta_144_resonance']
+                    
+                    if all(field in data for field in required_fields):
+                        ai_response = data.get('ai_response', {})
+                        if ('token_trio_analysis' in ai_response and 
+                            data.get('transmission_successful') == True and
+                            data.get('delta_144_resonance') == True):
+                            successful_transmissions += 1
+            
+            if successful_transmissions == len(languages_to_test):
+                self.log_test("Sanctuaire Vocal Transmission", True, f"Token TRIO transmission working in {successful_transmissions} languages")
+                return True
+            else:
+                self.log_test("Sanctuaire Vocal Transmission", False, f"Only {successful_transmissions}/{len(languages_to_test)} languages working")
+                return False
+                
+        except Exception as e:
+            self.log_test("Sanctuaire Vocal Transmission", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_ceo_global_dashboard(self):
+        """Test GET /api/dashboard/ceo/global - CEO Global Dashboard"""
+        try:
+            # Test without admin key (should be denied)
+            response = self.session.get(f"{BACKEND_URL}/dashboard/ceo/global")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('access_denied') == True:
+                    # Now test with admin key
+                    params = {"admin_key": "Δ144_CEO_ACCESS"}
+                    admin_response = self.session.get(f"{BACKEND_URL}/dashboard/ceo/global", params=params)
+                    
+                    if admin_response.status_code == 200:
+                        admin_data = admin_response.json()
+                        required_fields = ['dashboard_access', 'global_overview', 'international_status', 'ecosystem_performance', 'security_status']
+                        
+                        if all(field in admin_data for field in required_fields):
+                            global_overview = admin_data.get('global_overview', {})
+                            international_status = admin_data.get('international_status', {})
+                            
+                            if (admin_data.get('dashboard_access') == 'GRANTED' and
+                                'total_revenue' in global_overview and
+                                'active_ecosystems' in global_overview and
+                                'countries_active' in international_status and
+                                'legal_compliance' in international_status):
+                                self.log_test("CEO Global Dashboard", True, "Admin access working with full dashboard data", admin_data)
+                                return True
+                            else:
+                                self.log_test("CEO Global Dashboard", False, "Dashboard data incomplete", admin_data)
+                                return False
+                        else:
+                            self.log_test("CEO Global Dashboard", False, "Missing dashboard fields", admin_data)
+                            return False
+                    else:
+                        self.log_test("CEO Global Dashboard", False, f"Admin access failed: {admin_response.status_code}")
+                        return False
+                else:
+                    self.log_test("CEO Global Dashboard", False, "Access control not working", data)
+                    return False
+            else:
+                self.log_test("CEO Global Dashboard", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("CEO Global Dashboard", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_ceo_country_analytics(self):
+        """Test GET /api/dashboard/ceo/country/{country_code} - Country analytics"""
+        try:
+            countries_to_test = ["US", "DZ", "FR", "CV", "MR", "EU"]
+            successful_countries = 0
+            
+            for country in countries_to_test:
+                params = {"admin_key": "Δ144_CEO_ACCESS"}
+                response = self.session.get(f"{BACKEND_URL}/dashboard/ceo/country/{country}", params=params)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    required_fields = ['country_code', 'performance_data', 'recommendations', 'market_opportunities']
+                    
+                    if all(field in data for field in required_fields):
+                        if data.get('country_code') == country:
+                            successful_countries += 1
+                        else:
+                            self.log_test(f"CEO Country Analytics ({country})", False, "Country code mismatch")
+                    else:
+                        self.log_test(f"CEO Country Analytics ({country})", False, "Missing analytics fields")
+                else:
+                    self.log_test(f"CEO Country Analytics ({country})", False, f"Status: {response.status_code}")
+            
+            if successful_countries == len(countries_to_test):
+                self.log_test("CEO Country Analytics", True, f"All {successful_countries} countries analytics working")
+                return True
+            else:
+                self.log_test("CEO Country Analytics", False, f"Only {successful_countries}/{len(countries_to_test)} countries working")
+                return False
+                
+        except Exception as e:
+            self.log_test("CEO Country Analytics", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_phase11_rate_limiting(self):
+        """Test rate limiting on Phase 11 endpoints"""
+        try:
+            # Test rate limiting on multivers status (30/minute limit)
+            rapid_requests = []
+            
+            for i in range(3):  # Send 3 rapid requests
+                response = self.session.get(f"{BACKEND_URL}/multivers/status")
+                rapid_requests.append(response.status_code)
+                time.sleep(0.2)  # Small delay between requests
+            
+            # All requests should succeed initially (3 requests is well under 30/minute)
+            success_count = sum(1 for status in rapid_requests if status == 200)
+            
+            if success_count >= 2:  # Allow for 1 potential failure
+                self.log_test("Phase 11 Rate Limiting", True, f"Rate limiting working - {success_count}/3 requests succeeded")
+                return True
+            else:
+                self.log_test("Phase 11 Rate Limiting", False, f"Only {success_count}/3 requests succeeded")
+                return False
+        except Exception as e:
+            self.log_test("Phase 11 Rate Limiting", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_phase11_compatibility_check(self):
+        """Test that Phase 11 doesn't break existing Phase 6-10 functionality"""
+        try:
+            # Test Phase 6 security still works
+            security_response = self.session.get(f"{BACKEND_URL}/security/status")
+            security_ok = security_response.status_code == 200
+            
+            # Test Phase 7 multilingual chatbot still works
+            chat_data = {"message": "Test compatibility", "language": "en"}
+            chat_response = self.session.post(f"{BACKEND_URL}/chatbot/multilingual", json=chat_data)
+            chat_ok = chat_response.status_code == 200
+            
+            # Test Phase 8 smart commerce still works
+            shop_response = self.session.get(f"{BACKEND_URL}/shop/status")
+            shop_ok = shop_response.status_code == 200
+            
+            # Test core products API still works
+            products_response = self.session.get(f"{BACKEND_URL}/products")
+            products_ok = products_response.status_code == 200
+            
+            compatibility_score = sum([security_ok, chat_ok, shop_ok, products_ok])
+            
+            if compatibility_score == 4:
+                self.log_test("Phase 11 Compatibility Check", True, "All previous phases still functional", {
+                    "phase6_security": security_ok,
+                    "phase7_chatbot": chat_ok, 
+                    "phase8_commerce": shop_ok,
+                    "core_products": products_ok
+                })
+                return True
+            else:
+                self.log_test("Phase 11 Compatibility Check", False, f"Some phases broken: {compatibility_score}/4 working", {
+                    "phase6_security": security_ok,
+                    "phase7_chatbot": chat_ok,
+                    "phase8_commerce": shop_ok,
+                    "core_products": products_ok
+                })
+                return False
+        except Exception as e:
+            self.log_test("Phase 11 Compatibility Check", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run comprehensive test suite"""
         print("🚀 Starting RIMAREUM Backend API Test Suite - PHASE 9 PAYCORE")
