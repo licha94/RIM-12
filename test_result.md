@@ -524,12 +524,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "PHASE 7 - Intelligent Detection Module"
-    - "PHASE 7 - GPT-Secure 4.0 Back-Office"
-    - "PHASE 7 - Smart Firewall ML"
-    - "PHASE 7 - Multilingual Chatbot"
-    - "PHASE 7 - Reactive Surveillance Mode"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
